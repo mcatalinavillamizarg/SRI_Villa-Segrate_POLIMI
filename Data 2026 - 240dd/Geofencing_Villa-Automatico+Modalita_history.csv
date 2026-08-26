@@ -1,0 +1,43 @@
+entity_id,state,last_changed
+sensor.villa_modalita_tado,unknown,2026-07-15T07:58:26.825Z
+sensor.villa_modalita_tado,HOME,2026-07-15T07:58:28.648Z
+sensor.villa_modalita_tado,unknown,2026-07-15T11:59:46.771Z
+sensor.villa_modalita_tado,HOME,2026-07-15T11:59:48.237Z
+sensor.villa_modalita_tado,unknown,2026-07-15T12:11:12.146Z
+sensor.villa_modalita_tado,HOME,2026-07-15T12:11:14.215Z
+sensor.villa_modalita_tado,unknown,2026-07-15T17:45:08.965Z
+sensor.villa_modalita_tado,HOME,2026-07-15T17:45:10.711Z
+sensor.villa_modalita_tado,unknown,2026-07-15T18:33:52.793Z
+sensor.villa_modalita_tado,HOME,2026-07-15T18:33:54.722Z
+sensor.villa_modalita_tado,unknown,2026-07-15T19:16:13.738Z
+sensor.villa_modalita_tado,HOME,2026-07-15T19:16:15.715Z
+sensor.villa_modalita_tado,unavailable,2026-07-16T08:01:44.535Z
+sensor.villa_modalita_tado,HOME,2026-07-16T09:55:16.200Z
+sensor.villa_geofencing_automatico,unknown,2026-07-15T07:58:26.832Z
+sensor.villa_geofencing_automatico,True,2026-07-15T07:58:28.649Z
+sensor.villa_geofencing_automatico,unknown,2026-07-15T11:59:46.775Z
+sensor.villa_geofencing_automatico,True,2026-07-15T11:59:48.238Z
+sensor.villa_geofencing_automatico,unknown,2026-07-15T12:11:12.148Z
+sensor.villa_geofencing_automatico,True,2026-07-15T12:11:14.216Z
+sensor.villa_geofencing_automatico,unknown,2026-07-15T17:45:08.967Z
+sensor.villa_geofencing_automatico,True,2026-07-15T17:45:10.711Z
+sensor.villa_geofencing_automatico,unknown,2026-07-15T18:33:52.796Z
+sensor.villa_geofencing_automatico,True,2026-07-15T18:33:54.723Z
+sensor.villa_geofencing_automatico,unknown,2026-07-15T19:16:13.742Z
+sensor.villa_geofencing_automatico,True,2026-07-15T19:16:15.716Z
+sensor.villa_geofencing_automatico,unavailable,2026-07-16T08:01:44.535Z
+sensor.villa_geofencing_automatico,True,2026-07-16T09:55:16.200Z
+sensor.villa_modalita_geofencing,unknown,2026-07-15T07:58:26.830Z
+sensor.villa_modalita_geofencing,Home (Auto),2026-07-15T07:58:28.648Z
+sensor.villa_modalita_geofencing,unknown,2026-07-15T11:59:46.773Z
+sensor.villa_modalita_geofencing,Home (Auto),2026-07-15T11:59:48.237Z
+sensor.villa_modalita_geofencing,unknown,2026-07-15T12:11:12.147Z
+sensor.villa_modalita_geofencing,Home (Auto),2026-07-15T12:11:14.215Z
+sensor.villa_modalita_geofencing,unknown,2026-07-15T17:45:08.966Z
+sensor.villa_modalita_geofencing,Home (Auto),2026-07-15T17:45:10.711Z
+sensor.villa_modalita_geofencing,unknown,2026-07-15T18:33:52.795Z
+sensor.villa_modalita_geofencing,Home (Auto),2026-07-15T18:33:54.722Z
+sensor.villa_modalita_geofencing,unknown,2026-07-15T19:16:13.740Z
+sensor.villa_modalita_geofencing,Home (Auto),2026-07-15T19:16:15.715Z
+sensor.villa_modalita_geofencing,unavailable,2026-07-16T08:01:44.535Z
+sensor.villa_modalita_geofencing,Home (Auto),2026-07-16T09:55:16.200Z
