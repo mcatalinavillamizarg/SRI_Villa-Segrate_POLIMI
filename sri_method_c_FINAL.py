@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-SRI Method C — Proposed Operational Assessment (Full Prototype — 54 services)
-Building: Villa 9A, Via Bernina, 9 — 20044 Arese (MI)
+SRI Method C -- Proposed Operational Assessment (Full Prototype -- 54 services)
+Building: Villa Segrate
 Evidence hierarchy: DBL Group 09 (primary) > DBL Group 08 (secondary) > CSV > IFC
 Climate zone: Southern Europe / Residential
 Reference: EU Delegated Regulation 2020/2155; SRI Technical Study D3.1
@@ -18,15 +18,12 @@ import numpy as np
 warnings.filterwarnings("ignore")
 
 # ── PATHS ──────────────────────────────────────────────────────────────────────
-_BASE = r"C:\Users\MCV\OneDrive - Politecnico di Milano\MBE_Management of Built Environment\00_THESIS\2025 Catalina e Daniel SRI\WORKING DOCS"
-DBL_PRIMARY   = _BASE + r"\DBL Villa\Digital Building Logbook (DBL)_Group 09.xlsx"
-DBL_SECONDARY = _BASE + r"\DBL Villa\Digital Building Logbook (DBL)_Group 08.xlsx"
-IFC_DIR       = _BASE + r"\SRI Calculator\Method C\IFC"
-CSV_DIR       = _BASE + r"\SRI Calculator\Method C\Data 2026 - 240dd"
-OUTPUT_DIR    = r"C:\Users\MCV\OneDrive - Politecnico di Milano\MBE_Management of Built Environment\00_THESIS\2025 Catalina e Daniel SRI\WORKING DOCS\SRI Calculator\Method C\Python"
-MANUAL_PATH        = _BASE + r"\SRI Calculator\Method C\Python\data\manual_assessments.json"
-BUILDING_INFO_PATH = _BASE + r"\SRI Calculator\Method C\Python\data\building_info.json"
-IFC_INVENTORY_PATH = _BASE + r"\SRI Calculator\Method C\Python\data\ifc_inventory.json"
+_HERE              = Path(__file__).parent
+CSV_DIR            = str(_HERE / "Data 2026 - 240dd")
+MANUAL_PATH        = str(_HERE / "data" / "manual_assessments.json")
+BUILDING_INFO_PATH = str(_HERE / "data" / "building_info.json")
+IFC_INVENTORY_PATH = str(_HERE / "data" / "ifc_inventory.json")
+OUTPUT_DIR         = str(_HERE)
 LOCAL_TZ      = "Europe/Rome"
 
 # ── APPLICABILITY STATUSES ────────────────────────────────────────────────────
