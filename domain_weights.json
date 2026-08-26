@@ -1,0 +1,836 @@
+{
+  "residential": {
+    "North Europe": {
+      "Heating": {
+        "EE": 0.29909,
+        "Flex": 0.42673,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.3146,
+        "Info": 0.11429
+      },
+      "Domestic hot water": {
+        "EE": 0.09281,
+        "Flex": 0.13241,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.09762,
+        "Info": 0.11429
+      },
+      "Cooling": {
+        "EE": 0,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Ventilation": {
+        "EE": 0.18736,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.19708,
+        "Info": 0.11429
+      },
+      "Lighting": {
+        "EE": 0.03697,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0
+      },
+      "Electricity": {
+        "EE": 0.13377,
+        "Flex": 0.19086,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.14071,
+        "Info": 0.11429
+      },
+      "Dynamic building envelope": {
+        "EE": 0.05,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.05,
+        "Info": 0.11429
+      },
+      "Electric vehicle charging": {
+        "EE": 0,
+        "Flex": 0.05,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Monitoring and control": {
+        "EE": 0.2,
+        "Flex": 0.2,
+        "Comfort": 0.2,
+        "Conv": 0.2,
+        "Health": 0.2,
+        "Maint": 0.2,
+        "Info": 0.2
+      }
+    },
+    "West Europe": {
+      "Heating": {
+        "EE": 0.33967,
+        "Flex": 0.45722,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.34643,
+        "Info": 0.11429
+      },
+      "Domestic hot water": {
+        "EE": 0.07621,
+        "Flex": 0.10258,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.07773,
+        "Info": 0.11429
+      },
+      "Cooling": {
+        "EE": 0.03039,
+        "Flex": 0.04091,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.03099,
+        "Info": 0.11429
+      },
+      "Ventilation": {
+        "EE": 0.17817,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.18172,
+        "Info": 0.11429
+      },
+      "Lighting": {
+        "EE": 0.01465,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0
+      },
+      "Electricity": {
+        "EE": 0.11091,
+        "Flex": 0.14929,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.11312,
+        "Info": 0.11429
+      },
+      "Dynamic building envelope": {
+        "EE": 0.05,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.05,
+        "Info": 0.11429
+      },
+      "Electric vehicle charging": {
+        "EE": 0,
+        "Flex": 0.05,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Monitoring and control": {
+        "EE": 0.2,
+        "Flex": 0.2,
+        "Comfort": 0.2,
+        "Conv": 0.2,
+        "Health": 0.2,
+        "Maint": 0.2,
+        "Info": 0.2
+      }
+    },
+    "South Europe": {
+      "Heating": {
+        "EE": 0.31666,
+        "Flex": 0.37624,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.3284,
+        "Info": 0.11429
+      },
+      "Domestic hot water": {
+        "EE": 0.09979,
+        "Flex": 0.11857,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.10349,
+        "Info": 0.11429
+      },
+      "Cooling": {
+        "EE": 0.06881,
+        "Flex": 0.08175,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.07136,
+        "Info": 0.11429
+      },
+      "Ventilation": {
+        "EE": 0.09195,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.09536,
+        "Info": 0.11429
+      },
+      "Lighting": {
+        "EE": 0.02681,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0
+      },
+      "Electricity": {
+        "EE": 0.14597,
+        "Flex": 0.17343,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.15138,
+        "Info": 0.11429
+      },
+      "Dynamic building envelope": {
+        "EE": 0.05,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.05,
+        "Info": 0.11429
+      },
+      "Electric vehicle charging": {
+        "EE": 0,
+        "Flex": 0.05,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Monitoring and control": {
+        "EE": 0.2,
+        "Flex": 0.2,
+        "Comfort": 0.2,
+        "Conv": 0.2,
+        "Health": 0.2,
+        "Maint": 0.2,
+        "Info": 0.2
+      }
+    },
+    "North-East Europe": {
+      "Heating": {
+        "EE": 0.30383,
+        "Flex": 0.41172,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.30636,
+        "Info": 0.11429
+      },
+      "Domestic hot water": {
+        "EE": 0.13928,
+        "Flex": 0.18873,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.14044,
+        "Info": 0.11429
+      },
+      "Cooling": {
+        "EE": 0,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Ventilation": {
+        "EE": 0.19033,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.19192,
+        "Info": 0.11429
+      },
+      "Lighting": {
+        "EE": 0.0062,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0
+      },
+      "Electricity": {
+        "EE": 0.11036,
+        "Flex": 0.14955,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.11128,
+        "Info": 0.11429
+      },
+      "Dynamic building envelope": {
+        "EE": 0.05,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.05,
+        "Info": 0.11429
+      },
+      "Electric vehicle charging": {
+        "EE": 0,
+        "Flex": 0.05,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Monitoring and control": {
+        "EE": 0.2,
+        "Flex": 0.2,
+        "Comfort": 0.2,
+        "Conv": 0.2,
+        "Health": 0.2,
+        "Maint": 0.2,
+        "Info": 0.2
+      }
+    },
+    "South-East Europe": {
+      "Heating": {
+        "EE": 0.20621,
+        "Flex": 0.24438,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.20871,
+        "Info": 0.11429
+      },
+      "Domestic hot water": {
+        "EE": 0.05803,
+        "Flex": 0.06878,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.05874,
+        "Info": 0.11429
+      },
+      "Cooling": {
+        "EE": 0.14659,
+        "Flex": 0.17373,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.14837,
+        "Info": 0.11429
+      },
+      "Ventilation": {
+        "EE": 0.10816,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.10948,
+        "Info": 0.11429
+      },
+      "Lighting": {
+        "EE": 0.009,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0
+      },
+      "Electricity": {
+        "EE": 0.22201,
+        "Flex": 0.26311,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.2247,
+        "Info": 0.11429
+      },
+      "Dynamic building envelope": {
+        "EE": 0.05,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.05,
+        "Info": 0.11429
+      },
+      "Electric vehicle charging": {
+        "EE": 0,
+        "Flex": 0.05,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Monitoring and control": {
+        "EE": 0.2,
+        "Flex": 0.2,
+        "Comfort": 0.2,
+        "Conv": 0.2,
+        "Health": 0.2,
+        "Maint": 0.2,
+        "Info": 0.2
+      }
+    }
+  },
+  "non_residential": {
+    "North Europe": {
+      "Heating": {
+        "EE": 0.31322,
+        "Flex": 0.49384,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.34962,
+        "Info": 0.11429
+      },
+      "Domestic hot water": {
+        "EE": 0.05369,
+        "Flex": 0.08464,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.05993,
+        "Info": 0.11429
+      },
+      "Cooling": {
+        "EE": 0.0937,
+        "Flex": 0.14773,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.10459,
+        "Info": 0.11429
+      },
+      "Ventilation": {
+        "EE": 0.19621,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.21902,
+        "Info": 0.11429
+      },
+      "Lighting": {
+        "EE": 0.07809,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0
+      },
+      "Electricity": {
+        "EE": 0.01509,
+        "Flex": 0.02379,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.01684,
+        "Info": 0.11429
+      },
+      "Dynamic building envelope": {
+        "EE": 0.05,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.05,
+        "Info": 0.11429
+      },
+      "Electric vehicle charging": {
+        "EE": 0,
+        "Flex": 0.05,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Monitoring and control": {
+        "EE": 0.2,
+        "Flex": 0.2,
+        "Comfort": 0.2,
+        "Conv": 0.2,
+        "Health": 0.2,
+        "Maint": 0.2,
+        "Info": 0.2
+      }
+    },
+    "West Europe": {
+      "Heating": {
+        "EE": 0.27278,
+        "Flex": 0.40662,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.31659,
+        "Info": 0.11429
+      },
+      "Domestic hot water": {
+        "EE": 0.08258,
+        "Flex": 0.12311,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.09585,
+        "Info": 0.11429
+      },
+      "Cooling": {
+        "EE": 0.1267,
+        "Flex": 0.18887,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.14705,
+        "Info": 0.11429
+      },
+      "Ventilation": {
+        "EE": 0.14309,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.16607,
+        "Info": 0.11429
+      },
+      "Lighting": {
+        "EE": 0.10378,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0
+      },
+      "Electricity": {
+        "EE": 0.02107,
+        "Flex": 0.0314,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.02445,
+        "Info": 0.11429
+      },
+      "Dynamic building envelope": {
+        "EE": 0.05,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.05,
+        "Info": 0.11429
+      },
+      "Electric vehicle charging": {
+        "EE": 0,
+        "Flex": 0.05,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Monitoring and control": {
+        "EE": 0.2,
+        "Flex": 0.2,
+        "Comfort": 0.2,
+        "Conv": 0.2,
+        "Health": 0.2,
+        "Maint": 0.2,
+        "Info": 0.2
+      }
+    },
+    "South Europe": {
+      "Heating": {
+        "EE": 0.30198,
+        "Flex": 0.41746,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.35938,
+        "Info": 0.11429
+      },
+      "Domestic hot water": {
+        "EE": 0.10727,
+        "Flex": 0.1483,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.12766,
+        "Info": 0.11429
+      },
+      "Cooling": {
+        "EE": 0.11743,
+        "Flex": 0.16234,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.13975,
+        "Info": 0.11429
+      },
+      "Ventilation": {
+        "EE": 0.08769,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.10435,
+        "Info": 0.11429
+      },
+      "Lighting": {
+        "EE": 0.11979,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0
+      },
+      "Electricity": {
+        "EE": 0.01584,
+        "Flex": 0.0219,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.01886,
+        "Info": 0.11429
+      },
+      "Dynamic building envelope": {
+        "EE": 0.05,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.05,
+        "Info": 0.11429
+      },
+      "Electric vehicle charging": {
+        "EE": 0,
+        "Flex": 0.05,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Monitoring and control": {
+        "EE": 0.2,
+        "Flex": 0.2,
+        "Comfort": 0.2,
+        "Conv": 0.2,
+        "Health": 0.2,
+        "Maint": 0.2,
+        "Info": 0.2
+      }
+    },
+    "North-East Europe": {
+      "Heating": {
+        "EE": 0.29248,
+        "Flex": 0.44428,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.32403,
+        "Info": 0.11429
+      },
+      "Domestic hot water": {
+        "EE": 0.09388,
+        "Flex": 0.1426,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.10401,
+        "Info": 0.11429
+      },
+      "Cooling": {
+        "EE": 0.08388,
+        "Flex": 0.12741,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.09293,
+        "Info": 0.11429
+      },
+      "Ventilation": {
+        "EE": 0.18322,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.20299,
+        "Info": 0.11429
+      },
+      "Lighting": {
+        "EE": 0.07304,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0
+      },
+      "Electricity": {
+        "EE": 0.02351,
+        "Flex": 0.03571,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.02604,
+        "Info": 0.11429
+      },
+      "Dynamic building envelope": {
+        "EE": 0.05,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.05,
+        "Info": 0.11429
+      },
+      "Electric vehicle charging": {
+        "EE": 0,
+        "Flex": 0.05,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Monitoring and control": {
+        "EE": 0.2,
+        "Flex": 0.2,
+        "Comfort": 0.2,
+        "Conv": 0.2,
+        "Health": 0.2,
+        "Maint": 0.2,
+        "Info": 0.2
+      }
+    },
+    "South-East Europe": {
+      "Heating": {
+        "EE": 0.28706,
+        "Flex": 0.42184,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.32574,
+        "Info": 0.11429
+      },
+      "Domestic hot water": {
+        "EE": 0.11572,
+        "Flex": 0.17006,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.13131,
+        "Info": 0.11429
+      },
+      "Cooling": {
+        "EE": 0.07459,
+        "Flex": 0.1096,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.08463,
+        "Info": 0.11429
+      },
+      "Ventilation": {
+        "EE": 0.15058,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.17087,
+        "Info": 0.11429
+      },
+      "Lighting": {
+        "EE": 0.08905,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0,
+        "Info": 0
+      },
+      "Electricity": {
+        "EE": 0.033,
+        "Flex": 0.0485,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0.03745,
+        "Info": 0.11429
+      },
+      "Dynamic building envelope": {
+        "EE": 0.05,
+        "Flex": 0,
+        "Comfort": 0.16,
+        "Conv": 0.1,
+        "Health": 0.16,
+        "Maint": 0.05,
+        "Info": 0.11429
+      },
+      "Electric vehicle charging": {
+        "EE": 0,
+        "Flex": 0.05,
+        "Comfort": 0,
+        "Conv": 0.1,
+        "Health": 0,
+        "Maint": 0,
+        "Info": 0.11429
+      },
+      "Monitoring and control": {
+        "EE": 0.2,
+        "Flex": 0.2,
+        "Comfort": 0.2,
+        "Conv": 0.2,
+        "Health": 0.2,
+        "Maint": 0.2,
+        "Info": 0.2
+      }
+    }
+  }
+}

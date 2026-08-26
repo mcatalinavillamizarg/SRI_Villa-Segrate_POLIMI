@@ -1,0 +1,35 @@
+{
+  "_description": "IFC element counts extracted from the three IFC discipline models. Edit only if the IFC files are re-exported and re-processed.",
+  "_source": "IFC grep of 01_Architectural, 02_HVAC, 03_Mechanical models",
+  "01_Architectural": {
+    "IFCWINDOW": 63,
+    "IFCDOOR": 56,
+    "IFCSLAB": 94,
+    "IFCCOVERING": 12,
+    "IFCPIPESEGMENT": 1,
+    "IFCBUILDING": 1,
+    "IFCBUILDINGELEMENTPROXY_Persiane": 29,
+    "note": "63 windows, 56 doors. Persiane (roller shutters) as IFCBUILDINGELEMENTPROXY: 5 types (40x50, 46.7x250, 70x160, 70x250, 80x160), ~29 instances. No motorised actuators detected."
+  },
+  "02_HVAC": {
+    "IFCPIPESEGMENT": 1866,
+    "IFCDUCTSEGMENT": 80,
+    "IFCVALVE": 9,
+    "IFCSPACEHEATER": 8,
+    "IFCELECTRIC": 7,
+    "IFCUNITARYEQUIPMENT": 2,
+    "IFCBOILER": 2,
+    "IFCBUILDING": 1,
+    "note": "2 boilers (HP + gas boiler), 8 space heaters (radiant panels/radiators), 2 unitary equipment (HP outdoor units)."
+  },
+  "03_Mechanical": {
+    "IFCPIPESEGMENT": 1719,
+    "IFCDUCTSEGMENT": 72,
+    "IFCVALVE": 8,
+    "IFCSPACEHEATER": 8,
+    "IFCUNITARYEQUIPMENT": 2,
+    "IFCELECTRIC": 2,
+    "IFCBUILDING": 1,
+    "note": "Mirrors HVAC model - likely a second discipline model of the same systems."
+  }
+}

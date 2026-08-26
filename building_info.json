@@ -1,0 +1,102 @@
+{
+  "_description": "Static building data from DBL Group 09 (authoritative). Edit this file when the DBL is updated. Do not edit sri_method_c_FINAL.py for building data changes.",
+  "_source": "DBL Group 09 primary, DBL Group 08 secondary, CSV-corroborated",
+  "id": "Villa Segrate",
+  "address": "Segrate (MI), Italy",
+  "coordinates": "45.55033, 9.08424",
+  "type": "Residential - Single-family semi-detached",
+  "net_floor_area_m2": 292,
+  "gross_floor_area_m2": 354,
+  "floors_total": 4,
+  "floors_above_ground": 3,
+  "floors_underground": 1,
+  "year_built": 1993,
+  "occupants": "4-6",
+  "climate_zone": "South",
+  "building_category": "Residential",
+  "systems": {
+    "heating": {
+      "present": true,
+      "generators": [
+        "INNOVA eHPoca 3in1 (air-to-water HP)",
+        "IMMERGAS HERCULES SOLAR 25 (condensing gas boiler)"
+      ],
+      "emission": ["Radiant floor (GF)", "Radiators / fan coils (upper floors)"],
+      "controls": [
+        "INNOVA HP controller",
+        "IMMERGAS boiler controller",
+        "Tado TRV - Camera Elena",
+        "Tado TRV - Camera Arianna",
+        "Tado TRV - Camera Giulia",
+        "Tado TRV - Bagno Doccia",
+        "Tado TRV - Bagno Vasca",
+        "Meross MTS200B - Soggiorno",
+        "Meross MTS200B - Studio M",
+        "Meross MTS200B - Studio S",
+        "Meross MTS200B - Bagno Piano Terra"
+      ],
+      "nominal_power_kw": 14,
+      "tado_zones_jan_jun": ["camera_elena","camera_arianna","camera_giulia","bagno_doccia","bagno_vasca"],
+      "meross_zones": ["soggiorno","studio_m","studio_s","bagno_piano_terra"]
+    },
+    "dhw": {
+      "present": true,
+      "generators": [
+        "INNOVA eHPoca 3in1 (HP DHW)",
+        "IMMERGAS HERCULES SOLAR 25 (gas boiler DHW)"
+      ],
+      "solar_thermal": "CP4 XL flat-plate collector",
+      "storage_L": 200,
+      "controls": ["IMMERGAS boiler controller", "solar differential controller"]
+    },
+    "cooling": {
+      "present": true,
+      "systems": [
+        "INNOVA eHPoca 3in1 (reversible HP)",
+        "AC split Soggiorno (ESPHome)",
+        "AC split Cucina (ESPHome)"
+      ],
+      "note": "AC splits installed July 2026. Operational cooling data confirmed Jul-Aug 2026 via Meross MTS200B (hvac_action=cooling).",
+      "csv_available_for_cooling": true,
+      "cooling_zones": ["bagno","cucina","soggiorno","studio_m","studio_s"]
+    },
+    "ventilation": {
+      "present": true,
+      "unit": "Zehnder ComfoAir Q450 MVHR",
+      "controls": ["Zehnder ComfoAir controller"],
+      "csv_available": true
+    },
+    "lighting": {
+      "present": true,
+      "automated": false
+    },
+    "dynamic_envelope": {
+      "present": true,
+      "type": "manual_roller_shutters",
+      "automated": false,
+      "sensor": false,
+      "ifc_elements": "Persiane (IFCBUILDINGELEMENTPROXY), 5 types, ~29 instances"
+    },
+    "electricity": {
+      "pv_kwp": 2.4,
+      "pv_panels": 12,
+      "battery_storage": true,
+      "bms": true,
+      "inverter": true
+    },
+    "ev_charging": {
+      "present": false
+    },
+    "monitoring": {
+      "home_assistant": true,
+      "geofencing": true,
+      "tado_app": true,
+      "comfoair_app": true
+    }
+  },
+  "dbl_sources": {
+    "primary": "Group 09 - Logbook (1).xlsx (authoritative)",
+    "secondary": "Gr.08_Digital Building Logbook (DBL).xlsx (cross-check only)",
+    "conflict_note": "DBL08 describes simpler building (gas boiler only, no HP/MVHR/solar thermal). DBL09 corroborated by CSV data."
+  }
+}
