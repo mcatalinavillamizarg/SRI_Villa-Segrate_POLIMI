@@ -1,0 +1,577 @@
+{
+ "_description": "Threshold sensitivity analysis of the SRI Method C engine. Every decision threshold was varied across a plausible range and the SRI recomputed, to establish how far the result depends on values that were chosen by judgement rather than fixed by the official catalogue.",
+ "_method": "For each threshold, three values spanning a plausible range. Only the check functions that read the threshold were re-run; all other service results were held at their baseline. 25 thresholds, 75 runs.",
+ "_engine": "sri_method_c_FINAL.py as of 2026-08-27",
+ "_dataset": "158 Home Assistant entities, 2026-01-01 to 2026-08-26",
+ "baseline_sri_pct": 31.3,
+ "baseline_class": "F",
+ "summary": {
+  "runs": 75,
+  "thresholds": 25,
+  "sri_range_pct": [
+   29.19,
+   34.33
+  ],
+  "sri_span_pp": 5.14,
+  "largest_single_threshold_span_pp": 3.03,
+  "thresholds_with_no_effect": 6,
+  "thresholds_below_1pp": 11,
+  "thresholds_above_2pp": 3,
+  "classes_observed": [
+   "F"
+  ],
+  "conclusion": "No threshold, varied across its plausible range, changes the SRI class. The result is robust to the values chosen."
+ },
+ "thresholds": {
+  "MC4_MIN_DIAG_HISTORY": {
+   "description": "records a diagnostic entity needs",
+   "values": [
+    1,
+    30,
+    500
+   ],
+   "scores": [
+    34.33,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 3.03,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "E8_MIN_ISLANDING_SHARE": {
+   "description": "share of hours that counts as sustained island operation",
+   "values": [
+    0.005,
+    0.02,
+    0.5
+   ],
+   "scores": [
+    33.57,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 2.27,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "H1A_MIN_ROOM_CONTROLLERS": {
+   "description": "controllers needed for individual room control",
+   "values": [
+    2,
+    5,
+    12
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    29.19
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 2.11,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "V1A_MIN_AQ_CORRELATION": {
+   "description": "correlation needed to call a fan demand-controlled",
+   "values": [
+    0.2,
+    0.5,
+    0.9
+   ],
+   "scores": [
+    33.28,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 1.98,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "MC4_MIN_FAULT_EVENTS": {
+   "description": "logged faults needed for central fault detection",
+   "values": [
+    5,
+    20,
+    600
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    29.78
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 1.52,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "MC4_MIN_FAULT_ENTITIES": {
+   "description": "distinct devices needed for central fault detection",
+   "values": [
+    2,
+    5,
+    60
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    29.78
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 1.52,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "E12_REALTIME_MAX_MINUTES": {
+   "description": "sampling interval that still counts as real time",
+   "values": [
+    0.1,
+    15,
+    240
+   ],
+   "scores": [
+    30.03,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 1.27,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "MIN_OPERATIONAL_SPAN_FRACTION": {
+   "description": "share of the period a capability must be observed",
+   "values": [
+    0.01,
+    0.1,
+    0.33
+   ],
+   "scores": [
+    32.34,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 1.04,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "E12_MIN_APPLIANCE_CIRCUITS": {
+   "description": "metered circuits needed for appliance-level feedback",
+   "values": [
+    1,
+    2,
+    5
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    30.44
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.86,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "E4_MIN_SCHEDULE_ETA2": {
+   "description": "variance share needed to call a load scheduled",
+   "values": [
+    0.01,
+    0.15,
+    0.5
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    30.54
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.76,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "E4_MIN_PV_CORRELATION": {
+   "description": "load-PV correlation needed for self-consumption control",
+   "values": [
+    0.01,
+    0.5,
+    0.9
+   ],
+   "scores": [
+    32.05,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.75,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "H4_MIN_SETPOINT_ZONES": {
+   "description": "zones with a varying setpoint needed for scheduled operation",
+   "values": [
+    1,
+    3,
+    8
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    30.56
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.74,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "V1A_MIN_HOUR_ETA2": {
+   "description": "variance share needed to call a fan clock-controlled",
+   "values": [
+    0.002,
+    0.15,
+    0.5
+   ],
+   "scores": [
+    32.0,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.7,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "V6_MIN_PARAM_TYPES_FOR_L3": {
+   "description": "IAQ parameter families needed for multi-parameter reporting",
+   "values": [
+    1,
+    2,
+    3
+   ],
+   "scores": [
+    31.8,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.5,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "V6_MIN_ZONES_FOR_L2": {
+   "description": "zones needed for per-room IAQ reporting",
+   "values": [
+    1,
+    3,
+    8
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    30.81
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.49,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "V6_MIN_RECORDS_PER_SENSOR": {
+   "description": "records a sensor needs to count as reporting",
+   "values": [
+    50,
+    500,
+    5000
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    30.81
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.49,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "DHW2B_MIN_DISTINCT_FRACTIONS": {
+   "description": "distinct solar fractions needed to show sequencing",
+   "values": [
+    3,
+    10,
+    200
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    31.16
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.14,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "V3_MAX_NIGHT_SHARE": {
+   "description": "night share above which free cooling is night-only",
+   "values": [
+    0.3,
+    0.6,
+    0.95
+   ],
+   "scores": [
+    31.17,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.13,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "V3_MIN_ENTHALPY_CORRELATION": {
+   "description": "humidity correlation needed for enthalpy control",
+   "values": [
+    0.2,
+    0.5,
+    0.7
+   ],
+   "scores": [
+    31.42,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.12,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "MIN_COVERAGE_FOR_VERIFIED": {
+   "description": "time coverage needed to call a result verified",
+   "values": [
+    40.0,
+    60.0,
+    90.0
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.0,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "MIN_RECORDS_FOR_VERIFIED": {
+   "description": "records needed to call a result verified",
+   "values": [
+    10,
+    100,
+    1000
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.0,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "COVERAGE_GAP_MULTIPLE": {
+   "description": "multiple of the median interval that counts as a gap",
+   "values": [
+    2,
+    10,
+    50
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.0,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "C1F_MIN_OBSERVATION_DAYS": {
+   "description": "dual-mode days before an absent conflict is verified",
+   "values": [
+    5,
+    30,
+    120
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.0,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "DE2_MIN_HISTORY": {
+   "description": "records a window sensor needs to count as operational",
+   "values": [
+    1,
+    100,
+    500
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.0,
+   "classes_seen": [
+    "F"
+   ]
+  },
+  "DHW1D_MIN_COVERAGE_PCT": {
+   "description": "solar-fraction coverage needed to characterise charging",
+   "values": [
+    20.0,
+    40.0,
+    95.0
+   ],
+   "scores": [
+    31.3,
+    31.3,
+    31.3
+   ],
+   "classes": [
+    "F",
+    "F",
+    "F"
+   ],
+   "span": 0.0,
+   "classes_seen": [
+    "F"
+   ]
+  }
+ }
+}

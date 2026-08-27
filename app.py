@@ -24,7 +24,29 @@ DOMAIN_WEIGHTS_ALL = {
 
 CLASS_COLORS = {"A":"#1a9641","B":"#7bc143","C":"#c4d600","D":"#ffd700","E":"#e16e28","F":"#d45b1a","G":"#d7191c"}
 CLASS_RANGES = [("G","0–20%",0),("F","20–35%",20),("E","35–50%",35),("D","50–65%",50),("C","65–75%",65),("B","75–90%",75),("A",">90%",90)]
-MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug"]
+MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug",
+          "Sep","Oct","Nov","Dec"]
+
+
+@st.cache_data(show_spinner=False)
+def _data_bounds():
+    """First and last timestamp in the dataset, so the period controls follow the
+    data instead of being pinned to the months that happened to exist when the
+    dashboard was written."""
+    eng = _load_engine()
+    lo, hi = eng.detect_csv_period(eng.CSV_DIR)
+    if lo is None or hi is None:
+        return pd.Timestamp("2026-01-01", tz="UTC"), pd.Timestamp("2026-08-31", tz="UTC")
+    return lo, hi
+
+
+def _data_month_range():
+    lo, hi = _data_bounds()
+    return int(lo.month), int(hi.month)
+
+
+def _data_year():
+    return int(_data_bounds()[0].year)
 NA_SET = {"N/A_NOT_EVIDENCED","N/A_EXPLICIT_ABSENCE"}
 
 # ── ENGINE ────────────────────────────────────────────────────────────────────
@@ -46,9 +68,10 @@ def _load_all_csv():
 def run_sri(m_start, m_end, zone, btype):
     eng = _load_engine()
     all_csv = _load_all_csv()
-    t_start = pd.Timestamp(f"2026-{m_start:02d}-01", tz="UTC")
-    last_day = calendar.monthrange(2026, m_end)[1]
-    t_end = pd.Timestamp(f"2026-{m_end:02d}-{last_day} 23:59:59", tz="UTC")
+    year = _data_year()
+    t_start = pd.Timestamp(f"{year}-{m_start:02d}-01", tz="UTC")
+    last_day = calendar.monthrange(year, m_end)[1]
+    t_end = pd.Timestamp(f"{year}-{m_end:02d}-{last_day} 23:59:59", tz="UTC")
     filtered = {}
     for k, df in all_csv.items():
         if "last_changed" in df.columns:
@@ -62,6 +85,72 @@ def run_sri(m_start, m_end, zone, btype):
     result = eng.calculate_sri_score(svc)
     return result, svc, t_start, t_end
 
+def score_only(svc_list, zone, btype):
+    """Re-run only the aggregation layer (FL -> SRI) on a modified service list.
+    No CSV reload, no evidence re-derivation. This is the layer shared by
+    Methods A, B and C, fixed by EU Delegated Regulation 2020/2155."""
+    eng = _load_engine()
+    eng.DOMAIN_WEIGHTS = DOMAIN_WEIGHTS_ALL[(zone, btype)]
+    return eng.calculate_sri_score(svc_list)
+
+def seed_applicable(s):
+    """Applicability as the baseline assessment sees it."""
+    return s["applicability_status"] not in NA_SET
+
+def seed_fl(s):
+    """The functionality level the baseline calculation actually USES for this
+    service. Not always level_achieved: UNRESOLVED services are scored at L0 by
+    calculate_sri_score regardless of the level recorded on the service. Seeding
+    the editor with the effective value is what guarantees that opening override
+    mode without editing anything reproduces the baseline score exactly."""
+    if s["applicability_status"] in NA_SET:
+        return 0
+    if s["applicability_status"] == "UNRESOLVED":
+        return 0
+    fl = s["level_achieved"]
+    return 0 if fl is None else int(fl)
+
+def apply_overrides(baseline_svc, edited_df):
+    """Build a new service list from baseline + manual FL / applicability edits.
+
+    Rows left untouched keep their original status, so the evidence-based
+    assessment passes through unchanged. Only edited rows are rewritten: an
+    explicit FL is marked VERIFIED so the aggregation treats it as a determinate
+    level, since UNRESOLVED would otherwise be forced back to L0."""
+    out = []
+    for i, s in enumerate(baseline_svc):
+        row = edited_df.iloc[i]
+        applicable = bool(row["Applicable"])
+        fl_raw = row["FL"]
+        fl = 0 if pd.isna(fl_raw) else int(fl_raw)
+        fl = max(0, min(fl, int(s["level_max"])))
+
+        untouched = (applicable == seed_applicable(s)) and (fl == seed_fl(s))
+        if untouched:
+            new = dict(s)
+            new["overridden"] = False
+            out.append(new)
+            continue
+
+        new = dict(s)
+        new["overridden"] = True
+        new["derived_level"] = s["level_achieved"]
+        new["derived_status"] = s["applicability_status"]
+        if not applicable:
+            new["applicability_status"] = "N/A_EXPLICIT_ABSENCE"
+            new["level_achieved"] = None
+            new["justification"] = "Manually excluded by assessor (override mode)."
+        else:
+            new["applicability_status"] = "VERIFIED"
+            new["level_achieved"] = fl
+            new["justification"] = (
+                f"Manually set to L{fl} by assessor (override mode). "
+                f"Evidence-derived value: "
+                f"{'L' + str(s['level_achieved']) if s['level_achieved'] is not None else 'N/A'}"
+                f" [{s['applicability_status']}].")
+        out.append(new)
+    return out
+
 # ── PAGE CONFIG ───────────────────────────────────────────────────────────────
 st.set_page_config(page_title="SRI Method C | Villa Segrate", page_icon="🏠", layout="wide")
 
@@ -70,6 +159,12 @@ st.markdown("""
 [data-testid="stAppViewContainer"]{background:#f2f4f7}
 [data-testid="stSidebar"]{background:#1c2541}
 [data-testid="stSidebar"] *{color:white!important}
+/* Widgets with a light background must keep dark text, otherwise the sidebar
+   rule above renders them white-on-white and the value becomes invisible. */
+[data-testid="stSidebar"] [data-baseweb="select"] *{color:#1c2541!important}
+[data-testid="stSidebar"] input{color:#1c2541!important}
+[data-baseweb="popover"] *{color:#1c2541!important}
+[data-baseweb="popover"] li:hover{background:#eef1f8!important}
 [data-testid="stSidebar"] .stSelectbox label, [data-testid="stSidebar"] .stSlider label{color:#9baac8!important;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p{color:#9baac8!important;font-size:11px}
 div[data-testid="stButton"] button{background:#e16e28;color:white;border:none;border-radius:6px;font-weight:700;font-size:14px;padding:12px 0;width:100%;letter-spacing:.04em}
@@ -88,10 +183,13 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
+    # Month range is read from the data rather than fixed, so adding a month of
+    # CSVs widens the slider instead of leaving the new data unreachable.
+    _lo, _hi = _data_month_range()
     month_range = st.select_slider(
-        "Analysis Period (2026)",
-        options=list(range(1,9)),
-        value=(1,8),
+        f"Analysis Period ({_data_year()})",
+        options=list(range(_lo, _hi + 1)),
+        value=(_lo, _hi),
         format_func=lambda x: MONTHS[x-1],
     )
     m_start, m_end = month_range
@@ -101,6 +199,19 @@ with st.sidebar:
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
     calc_clicked = st.button("CALCULATE SRI", use_container_width=True)
+
+    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    mode = st.radio(
+        "Assessment Mode",
+        ["Evidence-driven (Method C)", "Manual override"],
+        index=0,
+        help=("Evidence-driven: functionality levels are derived by the engine from "
+              "operational data (CSV), the Digital Building Logbook and the IFC models. "
+              "Manual override: functionality levels are set by the assessor, as in a "
+              "Method B assessment. Used to validate the aggregation layer against the "
+              "official Excel and to run improvement scenarios."),
+    )
+    override_mode = mode.startswith("Manual")
 
     st.markdown("""
     <div style="margin-top:24px;padding-top:16px;border-top:1px solid #2e3d5c">
@@ -123,7 +234,67 @@ if calc_clicked:
 
 # ── HEADER ────────────────────────────────────────────────────────────────────
 if st.session_state.result:
-    result, svc_list, t_start, t_end, zone_used, btype_used = st.session_state.result
+    result_base, svc_base, t_start, t_end, zone_used, btype_used = st.session_state.result
+    result, svc_list = result_base, svc_base
+
+    # ── MANUAL OVERRIDE PANEL ─────────────────────────────────────────────────
+    if override_mode:
+        rows = []
+        for s in svc_base:
+            status = s["applicability_status"]
+            ap = seed_applicable(s)
+            if not ap:
+                derived_txt = "N/A (excluded)"
+            elif status == "UNRESOLVED":
+                derived_txt = "L0 (unresolved)"
+            else:
+                derived_txt = f"L{seed_fl(s)}"
+            rows.append({
+                "Code": s["service"],
+                "Service": s["description"],
+                "Domain": s["domain"],
+                "Derived": derived_txt,
+                "Applicable": ap,
+                "FL": seed_fl(s),
+                "Max": int(s["level_max"]),
+            })
+        base_df = pd.DataFrame(rows)
+
+        with st.expander("Manual functionality level override (54 services)", expanded=True):
+            st.markdown(
+                "<div style='font-size:11.5px;color:#495057;line-height:1.6;margin-bottom:10px'>"
+                "Set functionality levels manually, as an assessor would in a Method B assessment. "
+                "The evidence engine is bypassed and only the aggregation layer runs "
+                "(domain weights, impact criteria, key functionalities), which is identical across "
+                "Methods A, B and C under EU Delegated Regulation 2020/2155. "
+                "Unchecking <em>Applicable</em> excludes the service from both numerator and denominator. "
+                "The <em>Derived</em> column keeps the evidence-based value for reference."
+                "</div>", unsafe_allow_html=True)
+
+            if st.button("Reset to derived values"):
+                st.session_state.pop("fl_editor", None)
+                st.rerun()
+
+            edited_df = st.data_editor(
+                base_df, key="fl_editor", hide_index=True, use_container_width=True,
+                height=420,
+                column_config={
+                    "Code":       st.column_config.TextColumn("Code", disabled=True, width="small"),
+                    "Service":    st.column_config.TextColumn("Service", disabled=True, width="medium"),
+                    "Domain":     st.column_config.TextColumn("Domain", disabled=True, width="small"),
+                    "Derived":    st.column_config.TextColumn("Derived", disabled=True, width="small",
+                                    help="Functionality level derived by the Method C evidence engine"),
+                    "Applicable": st.column_config.CheckboxColumn("Applicable", width="small"),
+                    "FL":         st.column_config.NumberColumn("FL", min_value=0, max_value=4,
+                                    step=1, width="small"),
+                    "Max":        st.column_config.NumberColumn("Max", disabled=True, width="small"),
+                },
+            )
+
+        svc_list = apply_overrides(svc_base, edited_df)
+        result = score_only(svc_list, zone_used, btype_used)
+        n_changed = sum(1 for s in svc_list if s.get("overridden"))
+
     sri_pct = result["sri_score_pct"]
     sri_cls = result["sri_class"]
     sri_lo  = result["sri_lower_bound_pct"]
@@ -144,7 +315,8 @@ if st.session_state.result:
         </div>
         <div style="font-size:11px;color:#d0d8f0;margin-top:5px">
           Period: {t_start.strftime("%b %Y")} &ndash; {t_end.strftime("%b %Y")} &middot;
-          Zone: {zone_used} &middot; {btype_used}
+          Zone: {zone_used} &middot; {btype_used} &middot;
+          Mode: {"Manual override" if override_mode else "Evidence-driven (Method C)"}
         </div>
       </div>
       <div style="background:{color};border-radius:10px;padding:12px 22px;text-align:center;min-width:130px">
@@ -159,10 +331,60 @@ if st.session_state.result:
     st.markdown("""
     <div style="background:#fff8e1;border-left:4px solid #f59f00;padding:8px 18px;
                 font-size:11px;color:#5a4000;border-radius:4px;margin-bottom:16px">
-      Research prototype only &mdash; not an officially approved SRI assessment.
+      Research prototype only, not an officially approved SRI assessment.
       Results are for academic purposes (MSc Thesis, Politecnico di Milano).
     </div>
     """, unsafe_allow_html=True)
+
+    # ── OVERRIDE COMPARISON ───────────────────────────────────────────────────
+    if override_mode:
+        b_pct = result_base["sri_score_pct"]
+        b_cls = result_base["sri_class"]
+        delta = sri_pct - b_pct
+        d_col = "#1a9641" if delta > 0 else ("#d7191c" if delta < 0 else "#6c757d")
+        d_txt = f"{delta:+.2f} pp" if delta != 0 else "identical"
+
+        if n_changed == 0:
+            note = ("No manual changes applied. The override score reproduces the "
+                    "evidence-driven score exactly, confirming that both modes share "
+                    "the same aggregation layer.")
+            note_bg, note_bd, note_fg = "#e8f5e9", "#1a9641", "#1b5e20"
+        else:
+            note = (f"{n_changed} of 54 services manually modified. The evidence-driven "
+                    f"result remains the Method C assessment of record; the override "
+                    f"figure is a what-if calculation.")
+            note_bg, note_bd, note_fg = "#f3e8fb", "#6a1b9a", "#4a1a7a"
+
+        st.markdown(f"""
+        <div class="card" style="margin-bottom:16px">
+          <h2>Evidence-driven vs Manual override</h2>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+            <div style="text-align:center;background:#f8fafc;border-radius:6px;padding:14px;
+                        border:2px solid #cbd5e1">
+              <div style="font-size:9px;text-transform:uppercase;color:#6c757d;letter-spacing:.06em">
+                Evidence-driven (Method C)</div>
+              <div style="font-size:26px;font-weight:800;color:#1c2541;line-height:1.2">{b_pct:.2f}%</div>
+              <div style="font-size:11px;color:#6c757d">Class {b_cls}</div>
+            </div>
+            <div style="text-align:center;background:#f8fafc;border-radius:6px;padding:14px;
+                        border:2px solid #6a1b9a">
+              <div style="font-size:9px;text-transform:uppercase;color:#6a1b9a;letter-spacing:.06em">
+                Manual override</div>
+              <div style="font-size:26px;font-weight:800;color:#6a1b9a;line-height:1.2">{sri_pct:.2f}%</div>
+              <div style="font-size:11px;color:#6c757d">Class {sri_cls}</div>
+            </div>
+            <div style="text-align:center;background:#f8fafc;border-radius:6px;padding:14px;
+                        border:2px solid #cbd5e1">
+              <div style="font-size:9px;text-transform:uppercase;color:#6c757d;letter-spacing:.06em">
+                Difference</div>
+              <div style="font-size:26px;font-weight:800;color:{d_col};line-height:1.2">{d_txt}</div>
+              <div style="font-size:11px;color:#6c757d">{n_changed} service(s) changed</div>
+            </div>
+          </div>
+          <div style="background:{note_bg};border-left:4px solid {note_bd};padding:8px 14px;
+                      font-size:11px;color:{note_fg};border-radius:4px">{note}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # ── ROW 1: SRI Scale + Stats ──────────────────────────────────────────────
     c1, c2 = st.columns([3, 2])
@@ -358,7 +580,13 @@ if st.session_state.result:
             fl_style = FL_STYLE.get(fl, FL_STYLE[None])
             fl_label = f"L{fl}/{s['level_max']}" if fl is not None else "N/A"
             just = (s["justification"] or "")[:180] + ("..." if len(s.get("justification","")) > 180 else "")
-            tbl += f"""<tr style="border-bottom:1px solid #e9ecef">
+            if s.get("overridden"):
+                row_style = "border-bottom:1px solid #e9ecef;background:#faf5ff;box-shadow:inset 3px 0 0 #6a1b9a"
+                badge_html = ('<span style="background:#e8d5f5;color:#4a1a7a;border:1px solid #d6aef0;'
+                              'padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">Override</span>')
+            else:
+                row_style = "border-bottom:1px solid #e9ecef"
+            tbl += f"""<tr style="{row_style}">
               <td style="padding:7px 10px;font-weight:700;font-family:monospace;color:#1c2541;white-space:nowrap">{s["service"]}</td>
               <td style="padding:7px 10px;color:#1a1a1a">{s["description"]}</td>
               <td style="padding:7px 10px">{badge_html}</td>
@@ -371,10 +599,33 @@ if st.session_state.result:
 
     # ── EXPORT ────────────────────────────────────────────────────────────────
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-    export = {"period": f"{t_start.date()} to {t_end.date()}", "climate_zone": zone_used,
-              "building_type": btype_used, "sri": result, "services": svc_list}
+    export = {
+        "period": f"{t_start.date()} to {t_end.date()}",
+        "climate_zone": zone_used,
+        "building_type": btype_used,
+        "assessment_mode": "manual_override" if override_mode else "evidence_driven_method_c",
+        "sri": result,
+        "services": svc_list,
+    }
+    if override_mode:
+        export["evidence_driven_baseline"] = {
+            "sri_score_pct": result_base["sri_score_pct"],
+            "sri_class": result_base["sri_class"],
+            "sri_lower_bound_pct": result_base["sri_lower_bound_pct"],
+            "sri_upper_bound_pct": result_base["sri_upper_bound_pct"],
+        }
+        export["override_delta_pp"] = round(result["sri_score_pct"] - result_base["sri_score_pct"], 2)
+        export["overridden_services"] = [
+            {"service": s["service"],
+             "derived_status": s.get("derived_status"),
+             "derived_level": s.get("derived_level"),
+             "override_status": s["applicability_status"],
+             "override_level": s["level_achieved"]}
+            for s in svc_list if s.get("overridden")
+        ]
+    mode_tag = "override" if override_mode else "evidence"
     st.download_button("Download JSON", data=json.dumps(export, indent=2, default=str),
-        file_name=f"sri_method_c_{t_start.strftime('%Y%m')}-{t_end.strftime('%Y%m')}.json",
+        file_name=f"sri_method_c_{mode_tag}_{t_start.strftime('%Y%m')}-{t_end.strftime('%Y%m')}.json",
         mime="application/json")
 
 else:

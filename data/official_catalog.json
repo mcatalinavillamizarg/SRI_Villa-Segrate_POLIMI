@@ -1,0 +1,3186 @@
+{
+ "_description": "Official SRI service catalogue extracted from SRI_calculation-sheet_v4.5. Level descriptions and impact scores are the authoritative EU definitions. Do not edit by hand: re-extract from the official sheet if it is updated.",
+ "_source": "SRI_calculation-sheet_v4.5 (Method B Results).xlsx, domain sheets H/DHW/C/V/L/DE/E/EV/MC",
+ "_extracted": "2026-08-27",
+ "_verified": "1596 impact-score cells and 54 max_fl values compared against sri_method_c_FINAL.py SERVICE_CATALOG: 0 mismatches",
+ "_note": "V-3 and C-1d are followed in the sheet by a second, broken block (#REF! descriptions, symbolic scores). Extraction stops at the Information sources delimiter to avoid it.",
+ "impact_keys": [
+  "EE",
+  "Flex",
+  "Comfort",
+  "Conv",
+  "Health",
+  "Maint",
+  "Info"
+ ],
+ "services": {
+  "C-1a": {
+   "name": "Cooling emission control",
+   "domain": "Cooling",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Central automatic control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Individual room control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 2,
+      "Health": 2,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Individual room control with communication between controllers and to BACS",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 3,
+      "Health": 2,
+      "Maint": 1,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Individual room control with communication and occupancy detection",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 3,
+      "Health": 2,
+      "Maint": 1,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "C-1b": {
+   "name": "Emission control for TABS (cooling mode)",
+   "domain": "Cooling",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Central automatic control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Advanced central automatic control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 2,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Advanced central automatic control with intermittent operation and/or room temperature feedback control",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 3,
+      "Health": 2,
+      "Maint": 1,
+      "Info": 1
+     }
+    }
+   }
+  },
+  "C-1c": {
+   "name": "Control of distribution network chilled water temperature (supply or return)",
+   "domain": "Cooling",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "Constant temperature control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Outside temperature compensated control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Demand based control",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "C-1d": {
+   "name": "Control of distribution pumps in networks",
+   "domain": "Cooling",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "On off control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Multi-Stage control",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Variable speed pump control (pump unit (internal) estimations)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Variable speed pump control (external demand signal)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "C-1f": {
+   "name": "Interlock: avoiding simultaneous heating and cooling in the same room",
+   "domain": "Cooling",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "No interlock",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Partial interlock (minimising risk of simultanieus heating and cooling e.g. by sliding setpoints)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Total interlock (control system ensures no simultaneous heating and cooling can take place)",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "C-1g": {
+   "name": "Control of Thermal Energy Storage (TES) operation",
+   "domain": "Cooling",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "Continuous storage operation",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Time-scheduled storage operation",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Load prediction based storage operation",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Cold storage capable of flexible control through grid signals (e.g. DSM)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "C-2a": {
+   "name": "Generator control for cooling",
+   "domain": "Cooling",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "On/Off-control of cooling production",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Multi-stage control of cooling production capacity depending on the load or demand (e.g. on/off of several compressors)",
+     "impacts": {
+      "EE": 1,
+      "Flex": 1,
+      "Comfort": 1,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Variable control of cooling production capacity depending on the load or demand (e.g. hot gas bypass, inverter frequency control)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 2,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Variable control of cooling production capacity depending on the load AND external signals from grid",
+     "impacts": {
+      "EE": 2,
+      "Flex": 3,
+      "Comfort": 2,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "C-2b": {
+   "name": "Sequencing of different cooling generators",
+   "domain": "Cooling",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "Priorities only based on running times",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Fixed sequencing based on loads only: e.g. depending on the generators characteristics such as absorption chiller vs. centrifugal chiller",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Dynamic priorities based on generator efficiency and characteristics (e.g. availability of free cooling)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Load prediction based sequencing: the sequence is based on e.g. COP and available power of a device and the predicted required power",
+     "impacts": {
+      "EE": 3,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Sequencing based on dynamic priority list, including external signals from grid",
+     "impacts": {
+      "EE": 3,
+      "Flex": 3,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "C-3": {
+   "name": "Report information regarding cooling system performance",
+   "domain": "Cooling",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Central or remote reporting of current performance KPIs (e.g. temperatures, submetering energy usage)",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 1
+     }
+    },
+    "2": {
+     "description": "Central or remote reporting of current performance KPIs and historical data",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 2
+     }
+    },
+    "3": {
+     "description": "Central or remote reporting of performance evaluation including forecasting and/or benchmarking",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 3
+     }
+    },
+    "4": {
+     "description": "Central or remote reporting of performance evaluation including forecasting and/or benchmarking; also including predictive management and fault detection",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 3,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "C-4": {
+   "name": "Flexibility and grid interaction",
+   "domain": "Cooling",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Scheduled operation of cooling system",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Self-learning optimal control of cooling system",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 2,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Cooling system capable of flexible control through grid signals (e.g. DSM)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 3,
+      "Comfort": 2,
+      "Conv": 3,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Optimized control of cooling system based on local predictions and grid signals (e.g. through model predictive control)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 3,
+      "Comfort": 3,
+      "Conv": 3,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "DE-1": {
+   "name": "Window solar shading control",
+   "domain": "Dynamic building envelope",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No sun shading or only manual operation",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Motorized operation with manual control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Motorized operation with automatic control based on sensor data",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 2,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Combined light/blind/HVAC control",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 3,
+      "Health": 2,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Predictive blind control (e.g. based on weather forecast)",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 3,
+      "Conv": 3,
+      "Health": 3,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "DE-2": {
+   "name": "Window open/closed control, combined with HVAC system",
+   "domain": "Dynamic building envelope",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "Manual operation or only fixed windows",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Open/closed detection to shut down heating or cooling systems",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Level 1 + Automised mechanical window opening based on room sensor data",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 1,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Level 2 + Centralized coordination of operable windows, e.g. to control free natural night cooling",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 2,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "DE-4": {
+   "name": "Reporting information regarding performance of dynamic building envelope systems",
+   "domain": "Dynamic building envelope",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No reporting",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Position of each product & fault detection",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 1
+     }
+    },
+    "2": {
+     "description": "Position of each product, fault detection & predictive maintenance",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 2
+     }
+    },
+    "3": {
+     "description": "Position of each product, fault detection, predictive maintenance, real-time sensor data (wind, lux, temperature…)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 3
+     }
+    },
+    "4": {
+     "description": "Position of each product, fault detection, predictive maintenance, real-time & historical sensor data (wind, lux, temperature…)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 2,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "DHW-1a": {
+   "name": "Control of DHW storage charging (with direct electric heating or integrated electric heat pump)",
+   "domain": "Domestic hot water",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "Automatic control on / off",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Automatic control on / off and scheduled charging enable",
+     "impacts": {
+      "EE": 1,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Automatic control on / off and scheduled charging enable and multi-sensor storage management",
+     "impacts": {
+      "EE": 2,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Automatic charging control based on local availability of renewables or information from electricity grid (DR, DSM)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 3,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "DHW-1b": {
+   "name": "Control of DHW storage charging (using hot water generation)",
+   "domain": "Domestic hot water",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "Automatic control on / off",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Automatic control on / off and scheduled charging enable",
+     "impacts": {
+      "EE": 1,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Automatic on/off control, scheduled charging enable and demand-based supply temperature control or multi-sensor storage management",
+     "impacts": {
+      "EE": 2,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "DHW production system capable of automatic charging control based on external signals (e.g. from district heating grid)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 3,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "DHW-1d": {
+   "name": "Control of DHW storage charging (with solar collector and supplymentary heat generation)",
+   "domain": "Domestic hot water",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "Manual selected control of solar energy or heat generation",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Automatic control of solar storage charge (Prio. 1) and supplementary storage charge",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Automatic control of solar storage charge (Prio. 1) and supplementary storage charge and demand-oriented supply or multi-sensor storage management",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Automatic control of solar storage charge (Prio. 1) and supplementary storage charge, demand-oriented supply and return temperature control and multi-sensor storage management",
+     "impacts": {
+      "EE": 3,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "DHW-2b": {
+   "name": "Sequencing in case of different DHW generators",
+   "domain": "Domestic hot water",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "Priorities only based on running time",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Control according to fixed priority list: e.g. based on rated energy efficiency",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Control according to dynamic priority list (based on current energy efficiency, carbon emissions and capacity of generators, e.g. solar, geothermal heat, cogeneration plant, fossil fuels)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Control according to dynamic priority list (based on current AND predicted load, energy efficiency, carbon emissions and capacity of generators)",
+     "impacts": {
+      "EE": 3,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Control according to dynamic priority list (based on current AND predicted load, energy efficiency, carbon emissions, capacity of generators AND external signals from grid)",
+     "impacts": {
+      "EE": 3,
+      "Flex": 3,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "DHW-3": {
+   "name": "Report information regarding domestic hot water performance",
+   "domain": "Domestic hot water",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Indication of actual values (e.g. temperatures, submetering energy usage)",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 1
+     }
+    },
+    "2": {
+     "description": "Actual values and historical data",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 2
+     }
+    },
+    "3": {
+     "description": "Performance evaluation including forecasting and/or benchmarking",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 3
+     }
+    },
+    "4": {
+     "description": "Performance evaluation including forecasting and/or benchmarking; also including predictive management and fault detection",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 2,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "E-11": {
+   "name": "Reporting information regarding energy storage",
+   "domain": "Electricity",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Current state of charge (SOC) data available",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 1
+     }
+    },
+    "2": {
+     "description": "Actual values and historical data",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 2
+     }
+    },
+    "3": {
+     "description": "Performance evaluation including forecasting and/or benchmarking",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 3
+     }
+    },
+    "4": {
+     "description": "Performance evaluation including forecasting and/or benchmarking; also including predictive management and fault detection",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 2,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "E-12": {
+   "name": "Reporting information regarding electricity consumption",
+   "domain": "Electricity",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "reporting on current electricity consumption on building level",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 1
+     }
+    },
+    "2": {
+     "description": "real-time feedback or benchmarking on building level",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 2
+     }
+    },
+    "3": {
+     "description": "real-time feedback or benchmarking on appliance level",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 3
+     }
+    },
+    "4": {
+     "description": "real-time feedback or benchmarking on appliance level with automated personalized recommendations",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 2,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "E-2": {
+   "name": "Reporting information regarding local electricity generation",
+   "domain": "Electricity",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Current generation data available",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 1
+     }
+    },
+    "2": {
+     "description": "Actual values and historical data",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 2
+     }
+    },
+    "3": {
+     "description": "Performance evaluation including forecasting and/or benchmarking",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 3
+     }
+    },
+    "4": {
+     "description": "Performance evaluation including forecasting and/or benchmarking; also including predictive management and fault detection",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 2,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "E-3": {
+   "name": "Storage of (locally generated) electricity",
+   "domain": "Electricity",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "On site storage of electricity (e.g. electric battery)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "On site storage of energy (e.g. electric battery or thermal storage) with controller based on grid signals",
+     "impacts": {
+      "EE": 0,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "On site storage of energy (e.g. electric battery or thermal storage) with controller optimising the use of locally generated electricity",
+     "impacts": {
+      "EE": 0,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "On site storage of energy (e.g. electric battery or thermal storage) with controller optimising the use of locally generated electricity and possibility to feed back into the grid",
+     "impacts": {
+      "EE": 0,
+      "Flex": 3,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "E-4": {
+   "name": "Optimizing self-consumption of locally generated electricity",
+   "domain": "Electricity",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Scheduling electricity consumption (plug loads, white goods, etc.)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Automated management of local electricity consumption based on current renewable energy availability",
+     "impacts": {
+      "EE": 0,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Automated management of local electricity consumption based on current and predicted energy needs and renewable energy availability",
+     "impacts": {
+      "EE": 0,
+      "Flex": 3,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "E-5": {
+   "name": "Control of combined heat and power plant (CHP)",
+   "domain": "Electricity",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "CHP control based on scheduled runtime management and/or current heat energy demand",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "CHP runtime control influenced by the fluctuating availability of RES; overproduction will be fed into the grid",
+     "impacts": {
+      "EE": 1,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "CHP runtime control influenced by the fluctuating availability of RES and grid signals; dynamic charging and runtime control to optimise self-consumption of renewables",
+     "impacts": {
+      "EE": 2,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "E-8": {
+   "name": "Support of (micro)grid operation modes",
+   "domain": "Electricity",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Automated management of (building-level) electricity consumption based on grid signals",
+     "impacts": {
+      "EE": 0,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Automated management of (building-level) electricity consumption and electricity supply to neighbouring buildings (microgrid) or grid",
+     "impacts": {
+      "EE": 0,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Automated management of (building-level) electricity consumption and supply, with potential to continue limited off-grid operation (island mode)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 3,
+      "Comfort": 0,
+      "Conv": 3,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "EV-15": {
+   "name": "EV Charging Capacity",
+   "domain": "Electric vehicle charging",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "not present",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "ducting (or simple power plug) available",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "0-9% of parking spaces has recharging points",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "10-50% or parking spaces has recharging point",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 3,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": ">50% of parking spaces has recharging point",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 3,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "EV-16": {
+   "name": "EV Charging Grid balancing",
+   "domain": "Electric vehicle charging",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "Not present (uncontrolled charging)",
+     "impacts": {
+      "EE": 0,
+      "Flex": -2,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "1-way controlled charging (e.g. including desired departure time and grid signals for optimization)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "2-way controlled charging (e.g. including desired departure time and grid signals for optimization)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 3,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "EV-17": {
+   "name": "EV charging information and connectivity",
+   "domain": "Electric vehicle charging",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "No information available",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Reporting information on EV charging status to occupant",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 2
+     }
+    },
+    "2": {
+     "description": "Reporting information on EV charging status to occupant AND automatic identification and authorizition of the driver to the charging station (ISO 15118 compliant)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "H-1a": {
+   "name": "Heat emission control",
+   "domain": "Heating",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Central automatic control (e.g. central thermostat)",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Individual room control (e.g. thermostatic valves, or electronic controller)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 2,
+      "Health": 2,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Individual room control with communication between controllers and to BACS",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 3,
+      "Health": 2,
+      "Maint": 1,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Individual room control with communication and occupancy detection",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 3,
+      "Health": 2,
+      "Maint": 1,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "H-1b": {
+   "name": "Emission control for TABS (heating mode)",
+   "domain": "Heating",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Central automatic control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Advanced central automatic control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 2,
+      "Health": 2,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Advanced central automatic control with intermittent operation and/or room temperature feedback control",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 3,
+      "Health": 2,
+      "Maint": 1,
+      "Info": 1
+     }
+    }
+   }
+  },
+  "H-1c": {
+   "name": "Control of distribution fluid temperature (supply or return air flow or water flow) - Similar function can be applied to the control of direct electric heating networks",
+   "domain": "Heating",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Outside temperature compensated control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Demand based control",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "H-1d": {
+   "name": "Control of distribution pumps in networks",
+   "domain": "Heating",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "On off control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Multi-Stage control",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Variable speed pump control (pump unit (internal) estimations)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Variable speed pump control (external demand signal)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "H-1f": {
+   "name": "Thermal Energy Storage (TES) for building heating (excluding TABS)",
+   "domain": "Heating",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "Continuous storage operation",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Time-scheduled storage operation",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Load prediction based storage operation",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Heat storage capable of flexible control through grid signals (e.g. DSM)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "H-2a": {
+   "name": "Heat generator control (all except heat pumps)",
+   "domain": "Heating",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "Constant temperature control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Variable temperature control depending on outdoor temperature",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Variable temperature control depending on the load (e.g. depending on supply water temperature set point)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "H-2b": {
+   "name": "Heat generator control (for heat pumps)",
+   "domain": "Heating",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "On/Off-control of heat generator",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Multi-stage control of heat generator capacity depending on the load or demand (e.g. on/off of several compressors)",
+     "impacts": {
+      "EE": 1,
+      "Flex": 1,
+      "Comfort": 1,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Variable control of heat generator capacity depending on the load or demand (e.g. hot gas bypass, inverter frequency control)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 2,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Variable control of heat generator capacity depending on the load AND external signals from grid",
+     "impacts": {
+      "EE": 2,
+      "Flex": 3,
+      "Comfort": 2,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "H-2d": {
+   "name": "Sequencing in case of different heat generators",
+   "domain": "Heating",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "Priorities only based on running time",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Control according to fixed priority list: e.g. based on rated energy efficiency",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Control according to dynamic priority list (based on current energy efficiency, carbon emissions and capacity of generators, e.g. solar, geothermal heat, cogeneration plant, fossil fuels)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Control according to dynamic priority list (based on current AND predicted load, energy efficiency, carbon emissions and capacity of generators)",
+     "impacts": {
+      "EE": 3,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Control according to dynamic priority list (based on current AND predicted load, energy efficiency, carbon emissions, capacity of generators AND external signals from grid)",
+     "impacts": {
+      "EE": 3,
+      "Flex": 3,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "H-3": {
+   "name": "Report information regarding heating system performance",
+   "domain": "Heating",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Central or remote reporting of current performance KPIs (e.g. temperatures, submetering energy usage)",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 1
+     }
+    },
+    "2": {
+     "description": "Central or remote reporting of current performance KPIs and historical data",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 2
+     }
+    },
+    "3": {
+     "description": "Central or remote reporting of performance evaluation including forecasting and/or benchmarking",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 3
+     }
+    },
+    "4": {
+     "description": "Central or remote reporting of performance evaluation including forecasting and/or benchmarking; also including predictive management and fault detection",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 3,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "H-4": {
+   "name": "Flexibility and grid interaction",
+   "domain": "Heating",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Scheduled operation of heating system",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Self-learning optimal control of heating system",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 2,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Heating system capable of flexible control through grid signals (e.g. DSM)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 3,
+      "Comfort": 2,
+      "Conv": 3,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Optimized control of heating system based on local predictions and grid signals (e.g. through model predictive control)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 3,
+      "Comfort": 3,
+      "Conv": 3,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "L-1a": {
+   "name": "Occupancy control for indoor lighting",
+   "domain": "Lighting",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "Manual on/off switch",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Manual on/off switch + additional sweeping extinction signal",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Automatic detection (auto on / dimmed or auto off)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Automatic detection (manual on / dimmed or auto off)",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "L-2": {
+   "name": "Control artificial lighting power based on daylight levels",
+   "domain": "Lighting",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "Manual (central)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Manual (per room / zone)",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Automatic switching",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Automatic dimming",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 2,
+      "Health": 2,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Automatic dimming including scene-based light control (during time intervals, dynamic and adapted lighting scenes are set, for example, in terms of illuminance level, different correlated colour temperature (CCT) and the possibility to change the light distribution within the space according to e. g. design, human needs, visual tasks)",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 3,
+      "Conv": 3,
+      "Health": 3,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "MC-13": {
+   "name": "Central reporting of TBS performance and energy use",
+   "domain": "Monitoring and control",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Central or remote reporting of realtime energy use per energy carrier",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 1
+     }
+    },
+    "2": {
+     "description": "Central or remote reporting of realtime energy use per energy carrier, combining TBS of at least 2 domains in one interface",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 2,
+      "Info": 2
+     }
+    },
+    "3": {
+     "description": "Central or remote reporting of realtime energy use per energy carrier, combining TBS of all main domains in one interface",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 3,
+      "Health": 0,
+      "Maint": 3,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "MC-25": {
+   "name": "Smart Grid Integration",
+   "domain": "Monitoring and control",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "None - No harmonization between grid and TBS; building is operated independently from the grid load",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Demand side management possible for (some) individual TBS, but not coordinated over various domains",
+     "impacts": {
+      "EE": 0,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Coordinated demand side management of multiple TBS",
+     "impacts": {
+      "EE": 1,
+      "Flex": 3,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "MC-28": {
+   "name": "Reporting information regarding demand side management performance and operation",
+   "domain": "Monitoring and control",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Reporting information on current DSM status, including managed energy flows",
+     "impacts": {
+      "EE": 0,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 2
+     }
+    },
+    "2": {
+     "description": "Reporting information on currenthistorical and predicted DSM status, including managed energy flows",
+     "impacts": {
+      "EE": 0,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "MC-29": {
+   "name": "Override of DSM control",
+   "domain": "Monitoring and control",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No DSM control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "DSM control without the possibility to override this control by the building user (occupant or facility manager)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 3,
+      "Comfort": -2,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": -1,
+      "Info": -2
+     }
+    },
+    "2": {
+     "description": "Manual override and reactivation of DSM control by the building user",
+     "impacts": {
+      "EE": 0,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Scheduled override of DSM control (and reactivation) by the building user",
+     "impacts": {
+      "EE": 0,
+      "Flex": 1,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Scheduled override of DSM control and reactivation with optimised control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 2,
+      "Comfort": 0,
+      "Conv": 3,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "MC-3": {
+   "name": "Run time management of HVAC systems",
+   "domain": "Monitoring and control",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "Manual setting",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Runtime setting of heating and cooling plants following a predefined time schedule",
+     "impacts": {
+      "EE": 1,
+      "Flex": 1,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Heating and cooling plant on/off control based on building loads",
+     "impacts": {
+      "EE": 2,
+      "Flex": 1,
+      "Comfort": 2,
+      "Conv": 2,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Heating and cooling plant on/off control based on predictive control or grid signals",
+     "impacts": {
+      "EE": 3,
+      "Flex": 2,
+      "Comfort": 2,
+      "Conv": 3,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "MC-30": {
+   "name": "Single platform that allows automated control & coordination between TBS + optimization of energy flow based on occupancy, weather and grid signals",
+   "domain": "Monitoring and control",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Single platform that allows manual control of multiple TBS",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Single platform that allows automated control & coordination between TBS",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Single platform that allows automated control & coordination between TBS + optimization of energy flow based on occupancy, weather and grid signals",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 3,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "MC-4": {
+   "name": "Detecting faults of technical building systems and providing support to the diagnosis of these faults",
+   "domain": "Monitoring and control",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "No central indication of detected faults and alarms",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "With central indication of detected faults and alarms for at least 2 relevant TBS",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 1,
+      "Health": 1,
+      "Maint": 1,
+      "Info": 1
+     }
+    },
+    "2": {
+     "description": "With central indication of detected faults and alarms for all relevant TBS",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 2,
+      "Health": 2,
+      "Maint": 2,
+      "Info": 2
+     }
+    },
+    "3": {
+     "description": "With central indication of detected faults and alarms for all relevant TBS, including diagnosing functions",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 3,
+      "Health": 3,
+      "Maint": 3,
+      "Info": 3
+     }
+    }
+   }
+  },
+  "MC-9": {
+   "name": "Occupancy detection: connected services",
+   "domain": "Monitoring and control",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Occupancy detection for individual functions, e.g. lighting",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 1,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Centralised occupant detection which feeds in to several TBS such as lighting and heating",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 2,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "V-1a": {
+   "name": "Supply air flow control at the room level",
+   "domain": "Ventilation",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No ventilation system or manual control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Clock control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Occupancy detection control",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 2,
+      "Health": 2,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Central Demand Control based on air quality sensors (CO2, VOC, humidity, ...)",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 3,
+      "Conv": 3,
+      "Health": 3,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Local Demand Control based on air quality sensors (CO2, VOC,...) with local flow from/to the zone regulated by dampers",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 3,
+      "Conv": 3,
+      "Health": 3,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "V-1c": {
+   "name": "Air flow or pressure control at the air handler level",
+   "domain": "Ventilation",
+   "group": "",
+   "max_fl": 4,
+   "levels": {
+    "0": {
+     "description": "No automatic control: Continuously supplies of air flow for a maximum load of all rooms",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "On off time control: Continuously supplies of air flow for a maximum load of all rooms during nominal occupancy time",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Multi-stage control: To reduce the auxiliary energy demand of the fan",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Automatic flow or pressure control without pressure reset: Load dependent supplies of air flow for the demand of all connected rooms.",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "4": {
+     "description": "Automatic flow or pressure control with pressure reset: Load dependent supplies of air flow for the demand of all connected rooms (for variable air volume systems with VFD).",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "V-2c": {
+   "name": "Heat recovery control: prevention of overheating",
+   "domain": "Ventilation",
+   "group": "",
+   "max_fl": 2,
+   "levels": {
+    "0": {
+     "description": "Without overheating control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Modulate or bypass heat recovery based on sensors in air exhaust",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Modulate or bypass heat recovery based on multiple room temperature sensors or predictive control",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 2,
+      "Health": 2,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "V-2d": {
+   "name": "Supply air temperature control at the air handling unit level",
+   "domain": "Ventilation",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Constant setpoint: A control loop enables to control the supply air temperature, the setpoint is constant and can only be modified by a manual action",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 1,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Variable set point with outdoor temperature compensation",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "Variable set point with load dependant compensation. A control loop enables to control the supply air temperature. The setpoint is defined as a function of the loads in the room",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 2,
+      "Conv": 1,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "V-3": {
+   "name": "Free cooling with mechanical ventilation system",
+   "domain": "Ventilation",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "No automatic control",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Night cooling",
+     "impacts": {
+      "EE": 1,
+      "Flex": 0,
+      "Comfort": 3,
+      "Conv": 2,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "2": {
+     "description": "Free cooling: air flows modulated during all periods of time to minimize the amount of mechanical cooling",
+     "impacts": {
+      "EE": 2,
+      "Flex": 0,
+      "Comfort": 3,
+      "Conv": 2,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "3": {
+     "description": "H,x- directed control: The amount of outside air and recirculation air are modulated during all periods of time to minimize the amount of mechanical cooling. Calculation is performed on the basis of temperatures and humidity (enthalpy).",
+     "impacts": {
+      "EE": 3,
+      "Flex": 0,
+      "Comfort": 3,
+      "Conv": 2,
+      "Health": 1,
+      "Maint": 0,
+      "Info": 0
+     }
+    }
+   }
+  },
+  "V-6": {
+   "name": "Reporting information regarding IAQ",
+   "domain": "Ventilation",
+   "group": "",
+   "max_fl": 3,
+   "levels": {
+    "0": {
+     "description": "None",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 0,
+      "Maint": 0,
+      "Info": 0
+     }
+    },
+    "1": {
+     "description": "Air quality sensors (e.g. CO2) and real time autonomous monitoring",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 2,
+      "Maint": 1,
+      "Info": 1
+     }
+    },
+    "2": {
+     "description": "Real time monitoring & historical information of IAQ available to occupants",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 3,
+      "Maint": 1,
+      "Info": 2
+     }
+    },
+    "3": {
+     "description": "Real time monitoring & historical information of IAQ available to occupants + warning on maintenance needs or occupant actions (e.g. window opening)",
+     "impacts": {
+      "EE": 0,
+      "Flex": 0,
+      "Comfort": 0,
+      "Conv": 0,
+      "Health": 3,
+      "Maint": 2,
+      "Info": 3
+     }
+    }
+   }
+  }
+ }
+}

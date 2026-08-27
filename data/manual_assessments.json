@@ -1,127 +1,187 @@
 {
-  "_description": "Pre-assessed functional levels for SRI services without real-time CSV sensor data. All levels based on documentary evidence (DBL09, DBL08, IFC inventory). Edit this file to update any level without touching the main engine.",
-  "_version": "1.0",
-  "_assessment_date": "2026-08-26",
-  "_building": "Villa Segrate",
-  "services": {
-    "H-1b": {
-      "status": "VERIFIED",
-      "level": 1,
-      "confidence": 0.65,
-      "justification": "DBL09: Radiant floor heating on ground floor (GF), controlled by INNOVA eHPoca 3in1 HP controller -- zone-level on/off based on supply water setpoint. IFC: 8 IFCSPACEHEATER elements consistent with combined radiant panels and radiators. No dedicated radiant-floor CSV available to verify scheduling (L2) or optimization (L3). Conservative: L1.",
-      "metadata": {"source": "DBL09 + IFC", "system": "INNOVA HP -> radiant floor GF"}
-    },
-    "H-1c": {
-      "status": "VERIFIED",
-      "level": 1,
-      "confidence": 0.60,
-      "justification": "DBL09: INNOVA eHPoca 3in1 air-to-water HP with integrated controller manages distribution supply temperature. L1 (variable temperature setpoint) confirmed by HP controller presence. L2 (weather-compensated) is technically probable for this HP model but no data log of supply temperature vs outdoor temperature available in CSV to verify. Conservative: L1.",
-      "metadata": {"source": "DBL09", "system": "INNOVA HP controller"}
-    },
-    "H-1d": {
-      "status": "VERIFIED",
-      "level": 1,
-      "confidence": 0.55,
-      "justification": "DBL09: Distribution circuit with radiant floor and radiators implies circulation pump(s). INNOVA HP system includes pump management. IFC: 1866 pipe segments confirm distribution network. No pump speed/status CSV available. L1 (time-based on/off) is minimum guaranteed; L2+ cannot be verified without pump data logs. Conservative: L1.",
-      "metadata": {"source": "DBL09 + IFC", "ifc_pipe_segments": 1866}
-    },
-    "H-2a": {
-      "status": "VERIFIED",
-      "level": 1,
-      "confidence": 0.70,
-      "justification": "DBL09: IMMERGAS HERCULES SOLAR 25 is a condensing gas boiler with integrated modulating burner and dedicated controller. Condensing boilers inherently modulate -- L1 (modulating control) verified. L2 (demand-based optimised start/stop) requires documented automatic optimisation logic, not evidenced in available sources. Conservative: L1.",
-      "metadata": {"source": "DBL09", "system": "IMMERGAS HERCULES SOLAR 25"}
-    },
-    "H-2b": {
-      "status": "VERIFIED",
-      "level": 2,
-      "confidence": 0.75,
-      "justification": "DBL09: INNOVA eHPoca 3in1 is an inverter air-to-water heat pump. Inverter drive provides continuous capacity modulation (0-100%) -- L2 verified. L3 (demand-based with grid signals) requires documented grid interaction capability, not evidenced in CSV or DBL. Conservative: L2.",
-      "metadata": {"source": "DBL09", "system": "INNOVA eHPoca 3in1 inverter HP"}
-    },
-    "H-2d": {
-      "status": "VERIFIED",
-      "level": 2,
-      "confidence": 0.65,
-      "justification": "DBL09: Hybrid system with INNOVA eHPoca 3in1 HP (primary) and IMMERGAS condensing boiler (backup/peak). HP leads at mild temperatures; boiler activates for peak load or backup -- this is automatic energy-based sequencing, L2. L3 (weather/grid signal integration) and L4 (predictive) not evidenced. Conservative: L2.",
-      "metadata": {"source": "DBL09", "systems": ["INNOVA eHPoca 3in1", "IMMERGAS HERCULES SOLAR 25"]}
-    },
-    "DHW-1a": {
-      "status": "VERIFIED",
-      "level": 1,
-      "confidence": 0.65,
-      "justification": "DBL09: INNOVA eHPoca 3in1 includes DHW production mode (3-in-1 = space heating + cooling + DHW). HP charges the 200L IMMERGAS storage tank. L1 (timed on/off for HP DHW charge) confirmed by HP controller presence. L2 (demand-based) and L3 (predictive) not evidenced -- no DHW HP mode CSV available. Conservative: L1.",
-      "metadata": {"source": "DBL09", "system": "INNOVA eHPoca 3in1 + 200L tank"}
-    },
-    "DHW-1b": {
-      "status": "VERIFIED",
-      "level": 1,
-      "confidence": 0.70,
-      "justification": "DBL09: IMMERGAS HERCULES SOLAR 25 condensing boiler with integrated DHW function and 200L storage. Dedicated boiler controller manages DHW charging program -- L1 (timed DHW charge). L2 (demand-adaptive) and L3 (predictive) not evidenced in CSV or DBL. Conservative: L1.",
-      "metadata": {"source": "DBL09", "system": "IMMERGAS HERCULES SOLAR 25"}
-    },
-    "DHW-2b": {
-      "status": "VERIFIED",
-      "level": 2,
-      "confidence": 0.65,
-      "justification": "DBL09: Three DHW generators present -- INNOVA HP (3in1), IMMERGAS condensing boiler, and solar thermal CP4 XL. Solar differential controller automatically prioritises solar, then HP, then boiler based on available solar energy and storage temperature. This is automatic energy-optimal sequencing, L2. L3 (grid signal) and L4 (predictive) not evidenced. Conservative: L2.",
-      "metadata": {"source": "DBL09", "generators": ["Solar CP4 XL (priority)", "INNOVA HP", "IMMERGAS boiler"]}
-    },
-    "L-1a": {
-      "status": "VERIFIED",
-      "level": 0,
-      "confidence": 0.85,
-      "justification": "DBL09 and DBL08: No automated lighting control documented. No lighting CSV found. IFC Architectural: no IfcLightFixture or lighting controller elements. Standard manual switches assumed -- L0.",
-      "metadata": {"source": "DBL09 + DBL08 + IFC"}
-    },
-    "L-2": {
-      "status": "VERIFIED",
-      "level": 0,
-      "confidence": 0.85,
-      "justification": "DBL09 and DBL08: No daylight sensor or automated daylight-responsive lighting documented. No illuminance sensor in DBL08 sensing section (N/A). No lighting CSV. IFC Architectural: no automated shading or lighting control elements -- L0.",
-      "metadata": {"source": "DBL09 + DBL08 + IFC"}
-    },
-    "E-3": {
-      "status": "VERIFIED",
-      "level": 1,
-      "confidence": 0.62,
-      "justification": "DBL09: Battery storage system with BMS (Battery Management System) documented. Battery charges from PV during daylight -- L1 (basic charge/discharge). L2 (self-consumption optimisation) is typical BMS function but not verifiable without battery SOC CSV (no Shelly or BMS CSV available). Conservative: L1.",
-      "metadata": {"source": "DBL09", "system": "Battery storage + BMS"}
-    },
-    "E-4": {
-      "status": "VERIFIED",
-      "level": 1,
-      "confidence": 0.60,
-      "justification": "DBL09: BMS and battery storage system. BMS inherently prioritises self-consumption (PV then loads then battery then grid) -- L1. L2 (time-based optimisation, e.g. TOU tariff) possible but not evidenced in any CSV or DBL. Conservative: L1.",
-      "metadata": {"source": "DBL09", "system": "BMS + PV + battery"}
-    },
-    "E-8": {
-      "status": "UNRESOLVED",
-      "level": 0,
-      "confidence": 0.40,
-      "justification": "DBL09: Battery storage and BMS and PV 2.4 kWp. Technical capability for islanding exists (battery + inverter). However: no documentation of micro-grid or islanding mode in DBL; no CSV showing grid disconnection events; no inverter specs confirming grid-forming capability. Classified UNRESOLVED -- lower bound L0, upper bound L1.",
-      "metadata": {"source": "DBL09", "lower_bound": 0, "upper_bound": 1}
-    },
-    "E-11": {
-      "status": "PARTIAL_EVIDENCE",
-      "level": 1,
-      "confidence": 0.55,
-      "justification": "DBL09: Battery storage system with BMS. BMS typically provides SOC display and logging -- L1 (basic reading). No battery SOC CSV available (Shelly not accessible). L2 and above (historical SOC trends, performance analysis) cannot be verified. Conservative: L1.",
-      "metadata": {"source": "DBL09"}
-    },
-    "MC-25": {
-      "status": "UNRESOLVED",
-      "level": 0,
-      "confidence": 0.35,
-      "justification": "DBL09: BMS and battery and PV present -- technical basis for smart grid integration exists. No CSV or DBL documentation of TOU tariff-based control, grid signal response, or demand-response programme. Classified UNRESOLVED. Lower bound: L0; upper bound: L1.",
-      "metadata": {"source": "DBL09", "lower_bound": 0, "upper_bound": 1}
-    },
-    "MC-28": {
-      "status": "UNRESOLVED",
-      "level": 0,
-      "confidence": 0.30,
-      "justification": "No DSM (demand-side management) programme documented in DBL or CSV. MC-25 (smart grid integration) is also UNRESOLVED, making DSM reporting contingent on its resolution. Lower bound: L0; upper bound: L1.",
-      "metadata": {"lower_bound": 0, "upper_bound": 1}
-    }
+ "_description": "Pre-assessed functional levels for SRI services without real-time CSV sensor data. All levels based on documentary evidence (DBL09, DBL08, IFC inventory). Edit this file to update any level without touching the main engine.",
+ "_version": "1.0",
+ "_assessment_date": "2026-08-26",
+ "_building": "Villa Segrate",
+ "services": {
+  "H-1b": {
+   "status": "VERIFIED",
+   "level": 1,
+   "confidence": 0.65,
+   "justification": "DBL09: Radiant floor heating on ground floor (GF), controlled by INNOVA eHPoca 3in1 HP controller -- zone-level on/off based on supply water setpoint. IFC: 8 IFCSPACEHEATER elements consistent with combined radiant panels and radiators. No dedicated radiant-floor CSV available to verify scheduling (L2) or optimization (L3). Conservative: L1.",
+   "metadata": {
+    "source": "DBL09 + IFC",
+    "system": "INNOVA HP -> radiant floor GF"
+   }
+  },
+  "H-1c": {
+   "status": "VERIFIED",
+   "level": 0,
+   "confidence": 0.7,
+   "justification": "Official L1 requires outside temperature compensated control; L2 requires demand based control. DBL09 confirms the INNOVA eHPoca 3in1 controller manages distribution supply temperature, but neither the logbook nor the CSV evidences an outdoor temperature sensor feeding that control loop, and no INNOVA entity exists in the dataset. The presence of a controller does not by itself establish weather compensation. Official L0 (no automatic control of distribution fluid temperature) is what the available evidence supports. CORRECTION 2026-08-27: previously L1. The earlier justification read L1 as 'variable temperature setpoint' and L2 as 'weather-compensated', which inverts the official wording, and then assigned L1 while stating that weather compensation was 'technically probable but not confirmed'.",
+   "metadata": {
+    "source": "DBL09",
+    "system": "INNOVA HP controller",
+    "previous_level": 1,
+    "previous_status": "VERIFIED",
+    "corrected": "2026-08-27",
+    "reason": "level reassessed against the official catalogue B wording"
+   }
+  },
+  "H-1d": {
+   "status": "VERIFIED",
+   "level": 1,
+   "confidence": 0.55,
+   "justification": "DBL09: Distribution circuit with radiant floor and radiators implies circulation pump(s). INNOVA HP system includes pump management. IFC: 1866 pipe segments confirm distribution network. No pump speed/status CSV available. L1 (time-based on/off) is minimum guaranteed; L2+ cannot be verified without pump data logs. Conservative: L1.",
+   "metadata": {
+    "source": "DBL09 + IFC",
+    "ifc_pipe_segments": 1866
+   }
+  },
+  "H-2a": {
+   "status": "VERIFIED",
+   "level": 0,
+   "confidence": 0.7,
+   "justification": "Official L1 requires variable temperature control depending on outdoor temperature; L0 is constant temperature control. DBL09 confirms the IMMERGAS HERCULES SOLAR 25 condensing boiler with a modulating burner. Burner modulation regulates output to match instantaneous demand and is intrinsic to any condensing boiler; it is not the same as varying the temperature set point according to outdoor conditions, which requires an external temperature probe. No such probe is documented and no boiler entity exists in the dataset. CORRECTION 2026-08-27: previously L1, argued from burner modulation, which is not the criterion the official L1 states.",
+   "metadata": {
+    "source": "DBL09",
+    "system": "IMMERGAS HERCULES SOLAR 25",
+    "previous_level": 1,
+    "previous_status": "VERIFIED",
+    "corrected": "2026-08-27",
+    "reason": "level reassessed against the official catalogue B wording"
+   }
+  },
+  "H-2b": {
+   "status": "VERIFIED",
+   "level": 2,
+   "confidence": 0.75,
+   "justification": "DBL09: INNOVA eHPoca 3in1 is an inverter air-to-water heat pump. Inverter drive provides continuous capacity modulation (0-100%) -- L2 verified. L3 (demand-based with grid signals) requires documented grid interaction capability, not evidenced in CSV or DBL. Conservative: L2.",
+   "metadata": {
+    "source": "DBL09",
+    "system": "INNOVA eHPoca 3in1 inverter HP"
+   }
+  },
+  "H-2d": {
+   "status": "UNRESOLVED",
+   "level": 1,
+   "confidence": 0.4,
+   "justification": "Official L1 is control according to a FIXED priority list (e.g. based on rated energy efficiency); L2 requires a DYNAMIC priority list based on current energy efficiency or carbon emissions. DBL09 confirms a hybrid system with the INNOVA heat pump as lead generator and the IMMERGAS boiler for peak and backup, which is a priority list, but whether the switchover follows a fixed bivalent rule or a computed current efficiency cannot be determined: the dataset contains no entity for either generator, so their sequencing is unobservable. Marked UNRESOLVED so the uncertainty is carried in the score bounds rather than resolved by assumption. Lower bound L0, upper bound L4. CORRECTION 2026-08-27: previously L2 VERIFIED, argued from the existence of two generators with different efficiencies, which establishes a priority list but not that it is dynamic.",
+   "metadata": {
+    "source": "DBL09",
+    "systems": [
+     "INNOVA eHPoca 3in1",
+     "IMMERGAS HERCULES SOLAR 25"
+    ],
+    "previous_level": 2,
+    "previous_status": "VERIFIED",
+    "corrected": "2026-08-27",
+    "reason": "level reassessed against the official catalogue B wording"
+   }
+  },
+  "DHW-1a": {
+   "status": "VERIFIED",
+   "level": 0,
+   "confidence": 0.7,
+   "justification": "Official L0 is already automatic on/off control; L1 additionally requires SCHEDULED charging to be enabled. DBL09 confirms the INNOVA eHPoca 3in1 produces DHW and charges the 200 L store, but neither the logbook nor the dataset evidences a charging schedule: there is no entity for the heat pump and no store temperature sensor, so charging times are unobservable. Automatic on/off is intrinsic to any thermostatic DHW store and is what L0 describes. CORRECTION 2026-08-27: previously L1, inferred from the presence of a controller rather than from evidence of scheduling.",
+   "metadata": {
+    "source": "DBL09",
+    "system": "INNOVA eHPoca 3in1 + 200L tank",
+    "previous_level": 1,
+    "corrected": "2026-08-27"
+   }
+  },
+  "DHW-1b": {
+   "status": "VERIFIED",
+   "level": 0,
+   "confidence": 0.7,
+   "justification": "Official L0 is already automatic on/off control; L1 additionally requires SCHEDULED charging to be enabled. DBL09 confirms the IMMERGAS HERCULES SOLAR 25 has an integrated DHW function and a dedicated controller, but no boiler entity exists in the dataset and no store temperature is logged, so a charging programme cannot be observed. CORRECTION 2026-08-27: previously L1, inferred from controller presence.",
+   "metadata": {
+    "source": "DBL09",
+    "system": "IMMERGAS HERCULES SOLAR 25",
+    "previous_level": 1,
+    "corrected": "2026-08-27"
+   }
+  },
+  "L-1a": {
+   "status": "VERIFIED",
+   "level": 0,
+   "confidence": 0.85,
+   "justification": "DBL09 and DBL08: No automated lighting control documented. No lighting CSV found. IFC Architectural: no IfcLightFixture or lighting controller elements. Standard manual switches assumed -- L0.",
+   "metadata": {
+    "source": "DBL09 + DBL08 + IFC"
+   }
+  },
+  "L-2": {
+   "status": "VERIFIED",
+   "level": 0,
+   "confidence": 0.85,
+   "justification": "DBL09 and DBL08: No daylight sensor or automated daylight-responsive lighting documented. No illuminance sensor in DBL08 sensing section (N/A). No lighting CSV. IFC Architectural: no automated shading or lighting control elements -- L0.",
+   "metadata": {
+    "source": "DBL09 + DBL08 + IFC"
+   }
+  },
+  "E-3": {
+   "status": "VERIFIED",
+   "level": 1,
+   "confidence": 0.62,
+   "justification": "DBL09: Battery storage system with BMS (Battery Management System) documented. Battery charges from PV during daylight -- L1 (basic charge/discharge). L2 (self-consumption optimisation) is typical BMS function but not verifiable without battery SOC CSV (no Shelly or BMS CSV available). Conservative: L1.",
+   "metadata": {
+    "source": "DBL09",
+    "system": "Battery storage + BMS"
+   }
+  },
+  "E-11": {
+   "status": "VERIFIED",
+   "level": 0,
+   "confidence": 0.75,
+   "justification": "Official L1 requires current state of charge (SOC) data to be available. DBL09 documents a battery with a BMS, and a BMS typically exposes SOC, but no SOC entity exists in the 158-entity dataset and no SOC reading is recorded anywhere in the logbook. The reporting service is therefore not evidenced at any level. CORRECTION 2026-08-27: previously L1. The earlier justification stated 'No battery SOC CSV available' and assigned L1 regardless, which is the exact criterion L1 requires.",
+   "metadata": {
+    "source": "DBL09",
+    "previous_level": 1,
+    "previous_status": "PARTIAL_EVIDENCE",
+    "corrected": "2026-08-27",
+    "reason": "level reassessed against the official catalogue B wording"
+   }
+  },
+  "MC-25": {
+   "status": "UNRESOLVED",
+   "level": 0,
+   "confidence": 0.35,
+   "justification": "DBL09: BMS and battery and PV present -- technical basis for smart grid integration exists. No CSV or DBL documentation of TOU tariff-based control, grid signal response, or demand-response programme. Classified UNRESOLVED. Lower bound: L0; upper bound: L1.",
+   "metadata": {
+    "source": "DBL09",
+    "lower_bound": 0,
+    "upper_bound": 1
+   }
+  },
+  "MC-28": {
+   "status": "UNRESOLVED",
+   "level": 0,
+   "confidence": 0.3,
+   "justification": "No DSM (demand-side management) programme documented in DBL or CSV. MC-25 (smart grid integration) is also UNRESOLVED, making DSM reporting contingent on its resolution. Lower bound: L0; upper bound: L1.",
+   "metadata": {
+    "lower_bound": 0,
+    "upper_bound": 1
+   }
   }
+ },
+ "_corrections_2026_08_27": "H-1c, H-2a and E-11 downgraded: their previous justifications described evidence that does not meet the official criterion for the level assigned. H-2d and DHW-2b set to UNRESOLVED: with no generator telemetry the engine cannot distinguish a fixed from a dynamic priority list, so the uncertainty is carried in the bounds. Verified against SRI_calculation-sheet_v4.5 catalogue B.",
+ "_moved_to_code_2026_08_27": {
+  "note": "These services were removed from the fixed-verdict file because the dataset does contain evidence that can decide them. They are now evaluated in sri_method_c_FINAL.py against the official catalogue wording.",
+  "services": {
+   "DHW-2b": {
+    "previous_level": 1,
+    "previous_status": "UNRESOLVED"
+   },
+   "E-4": {
+    "previous_level": 1,
+    "previous_status": "VERIFIED"
+   },
+   "E-8": {
+    "previous_level": 0,
+    "previous_status": "UNRESOLVED"
+   }
+  }
+ }
 }
