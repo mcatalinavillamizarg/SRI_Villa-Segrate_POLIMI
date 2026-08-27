@@ -2627,8 +2627,10 @@ def check_E12(csv_files: dict) -> dict:
                     f"{E12_MIN_APPLIANCE_CIRCUITS} needed.")
         else:
             level, conf = 1, 0.70
+            interval_txt = (f"{median_min:.0f} min" if median_min is not None
+                            else "not measurable from fewer than three records")
             note = (f"Building electricity consumption is reported ({len(vals)} records) but the "
-                    f"median sampling interval is {median_min:.0f} min, above the "
+                    f"median sampling interval is {interval_txt}, above the "
                     f"{E12_REALTIME_MAX_MINUTES} min threshold for real-time feedback. L1.")
 
         status, gate_note = _gate(VERIFIED, coverage_pct=cov["coverage_pct"],

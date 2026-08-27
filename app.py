@@ -29,29 +29,76 @@ MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug",
 
 
 @st.cache_data(show_spinner=False)
-def _data_bounds():
+def _data_bounds(fingerprint: str = ""):
     """First and last timestamp in the dataset, so the period controls follow the
     data instead of being pinned to the months that happened to exist when the
-    dashboard was written."""
+    dashboard was written.
+
+    Falls back to scanning the CSV folder directly if the engine predates
+    detect_csv_period, so the dashboard keeps working when the two files are
+    deployed out of step with each other.
+    """
     eng = _load_engine()
-    lo, hi = eng.detect_csv_period(eng.CSV_DIR)
+    lo = hi = None
+    detect = getattr(eng, "detect_csv_period", None)
+    csv_dir = getattr(eng, "CSV_DIR", None)
+    if detect is not None and csv_dir:
+        try:
+            lo, hi = detect(csv_dir)
+        except Exception:
+            lo = hi = None
+    if (lo is None or hi is None) and csv_dir and os.path.isdir(csv_dir):
+        for fname in sorted(os.listdir(csv_dir)):
+            if not fname.endswith(".csv"):
+                continue
+            try:
+                col = pd.read_csv(os.path.join(csv_dir, fname), usecols=["last_changed"])
+                t = pd.to_datetime(col["last_changed"], utc=True, errors="coerce").dropna()
+                if t.empty:
+                    continue
+                lo = t.min() if lo is None or t.min() < lo else lo
+                hi = t.max() if hi is None or t.max() > hi else hi
+            except Exception:
+                continue
     if lo is None or hi is None:
         return pd.Timestamp("2026-01-01", tz="UTC"), pd.Timestamp("2026-08-31", tz="UTC")
     return lo, hi
 
 
-def _data_month_range():
-    lo, hi = _data_bounds()
-    return int(lo.month), int(hi.month)
+def _period_options():
+    """Every calendar month the dataset touches, as year-month periods.
+
+    Month numbers alone break as soon as the data crosses a year boundary, which
+    this dataset does: it starts on 31 December 2025 and runs into August 2026.
+    Working in periods keeps the control correct in that case and for any future
+    refresh."""
+    lo, hi = _data_bounds(_engine_fingerprint())
+    return list(pd.period_range(lo.to_period("M"), hi.to_period("M"), freq="M"))
 
 
-def _data_year():
-    return int(_data_bounds()[0].year)
+def _fmt_period(p) -> str:
+    return f"{MONTHS[p.month - 1]} {p.year}"
 NA_SET = {"N/A_NOT_EVIDENCED","N/A_EXPLICIT_ABSENCE"}
 
 # ── ENGINE ────────────────────────────────────────────────────────────────────
+def _engine_fingerprint() -> str:
+    """Hash of the engine source.
+
+    Streamlit keeps @st.cache_resource entries across a redeploy whenever the
+    decorated function's own source is unchanged. Since _load_engine reads the
+    engine from disk, an updated engine would otherwise keep serving the version
+    cached before the deploy. Passing the file's hash as an argument makes the
+    cache key follow the engine's contents instead.
+    """
+    try:
+        import hashlib
+        return hashlib.md5(Path(ENGINE_PATH).read_bytes()).hexdigest()
+    except Exception:
+        return "unknown"
+
+
 @st.cache_resource
-def _load_engine():
+def _load_engine_cached(fingerprint: str):
     with open(ENGINE_PATH, encoding="utf-8") as f:
         code = f.read()
     code = code.replace('if __name__ == "__main__":', 'if False:')
@@ -60,18 +107,23 @@ def _load_engine():
     exec(compile(code, ENGINE_PATH, "exec"), mod.__dict__)
     return mod
 
+
+def _load_engine():
+    return _load_engine_cached(_engine_fingerprint())
+
+
 @st.cache_data(show_spinner=False)
-def _load_all_csv():
+def _load_all_csv(fingerprint: str = ""):
     eng = _load_engine()
     return eng.load_csv_files(eng.CSV_DIR)
 
-def run_sri(m_start, m_end, zone, btype):
+def run_sri(p_start, p_end, zone, btype):
+    """p_start and p_end are pandas year-month Periods, so a period that crosses
+    a calendar year is expressed correctly."""
     eng = _load_engine()
-    all_csv = _load_all_csv()
-    year = _data_year()
-    t_start = pd.Timestamp(f"{year}-{m_start:02d}-01", tz="UTC")
-    last_day = calendar.monthrange(year, m_end)[1]
-    t_end = pd.Timestamp(f"{year}-{m_end:02d}-{last_day} 23:59:59", tz="UTC")
+    all_csv = _load_all_csv(_engine_fingerprint())
+    t_start = pd.Timestamp(p_start.start_time, tz="UTC")
+    t_end = pd.Timestamp(p_end.end_time, tz="UTC")
     filtered = {}
     for k, df in all_csv.items():
         if "last_changed" in df.columns:
@@ -183,14 +235,14 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # Month range is read from the data rather than fixed, so adding a month of
-    # CSVs widens the slider instead of leaving the new data unreachable.
-    _lo, _hi = _data_month_range()
+    # Period options are read from the data rather than fixed, so adding a month
+    # of CSVs widens the slider instead of leaving the new data unreachable.
+    _periods = _period_options()
     month_range = st.select_slider(
-        f"Analysis Period ({_data_year()})",
-        options=list(range(_lo, _hi + 1)),
-        value=(_lo, _hi),
-        format_func=lambda x: MONTHS[x-1],
+        "Analysis Period",
+        options=_periods,
+        value=(_periods[0], _periods[-1]),
+        format_func=_fmt_period,
     )
     m_start, m_end = month_range
 
