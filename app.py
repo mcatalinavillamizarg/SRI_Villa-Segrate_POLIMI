@@ -495,24 +495,27 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
         st.markdown(scale_html + arrow_html + unresolved_note + "</div>", unsafe_allow_html=True)
 
     # ── Building Data + Technical Systems ─────────────────────────────────────
-    # Full width and stacked rather than side by side. Halving the width left
-    # each inner column at a quarter of the page, which is where "Segrate (MI),
-    # Italy" started breaking across lines. auto-fit collapses the pair to a
-    # single column when the window is genuinely narrow, instead of squeezing.
-    if True:
+    # Two cards side by side, each holding two inner columns. What used to break
+    # the layout was not the split but the labels: a 100px minimum on every label
+    # left the value with too little room and pushed it onto a second line. The
+    # labels are narrower now and the inner columns collapse to one on a narrow
+    # window rather than squeezing.
+    bd1, bd2 = st.columns(2)
+    with bd1:
         st.markdown("""<div class="card"><h2>Building Data</h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:5px 28px">
-          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Building</span><span style="font-size:12.5px">Villa Segrate</span></div>
-          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Location</span><span style="font-size:12.5px">Segrate (MI), Italy</span></div>
-          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Year Built</span><span style="font-size:12.5px">1993</span></div>
-          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Building Use</span><span style="font-size:12.5px">Residential</span></div>
-          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Type</span><span style="font-size:12.5px">Single-family villa</span></div>
-          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Net Floor Area</span><span style="font-size:12.5px">292 m²</span></div>
-          <div style="display:flex;gap:8px;padding:4px 0"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Floors</span><span style="font-size:12.5px">4 (3 above grade + 1 underground)</span></div>
-          <div style="display:flex;gap:8px;padding:4px 0"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Climate Zone</span><span style="font-size:12.5px">South (IT)</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:2px 18px">
+          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:76px;flex:0 0 76px">Building</span><span style="font-size:12.5px">Villa Segrate</span></div>
+          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:76px;flex:0 0 76px">Location</span><span style="font-size:12.5px">Segrate (MI), Italy</span></div>
+          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:76px;flex:0 0 76px">Year Built</span><span style="font-size:12.5px">1993</span></div>
+          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:76px;flex:0 0 76px">Building Use</span><span style="font-size:12.5px">Residential</span></div>
+          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:76px;flex:0 0 76px">Type</span><span style="font-size:12.5px">Single-family villa</span></div>
+          <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:76px;flex:0 0 76px">Net Floor Area</span><span style="font-size:12.5px">292 m²</span></div>
+          <div style="display:flex;gap:8px;padding:4px 0"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:76px;flex:0 0 76px">Floors</span><span style="font-size:12.5px">4 (3 above grade + 1 underground)</span></div>
+          <div style="display:flex;gap:8px;padding:4px 0"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:76px;flex:0 0 76px">Climate Zone</span><span style="font-size:12.5px">South (IT)</span></div>
         </div></div>""", unsafe_allow_html=True)
+    with bd2:
         st.markdown("""<div class="card"><h2>Technical Systems</h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0 28px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:0 18px">
           <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>INNOVA eHPoca 3in1 (HP)</div>
           <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>IMMERGAS HERCULES SOLAR 25</div>
           <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>Tado TRVs (5 zones)</div>
@@ -531,96 +534,168 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
     # the catalogue.
     db = result.get("domain_breakdown") or {}
     if db:
-        rows = sorted(db.items(), key=lambda kv: -kv[1]["gap_pp"])
-        dom_html = """<div class="card"><h2>Domain Breakdown</h2>
-        <div style="font-size:11px;color:#6c757d;margin-bottom:12px;line-height:1.5">
-        Each domain scored against its own potential, and the points it accounts
-        for in the headline result. Contributions sum to the SRI; maxima sum to 100.
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead><tr style="background:#f0f2f5">
-          <th style="padding:6px 10px;text-align:left;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Domain</th>
-          <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Score</th>
-          <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Contribution</th>
-          <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Of a possible</th>
-          <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Gap</th>
-        </tr></thead><tbody>"""
-        for dom, v in rows:
-            name = DOMAIN_LABELS.get(dom, dom)
+        # Chart beside table, as in the reference report. The bars are drawn in
+        # CSS rather than on a canvas: Streamlit strips <script>, so a Chart.js
+        # figure would render as an empty box.
+        chart = ('<div style="display:flex;align-items:flex-end;gap:6px;height:170px;'
+                 'border-bottom:1px solid #dee2e6;padding-bottom:2px">')
+        labels = '<div style="display:flex;gap:6px;margin-top:5px">'
+        for dom in DOMAIN_ORDER:
+            v = db.get(dom)
+            pct = v["score_pct"] if v else 0.0
+            col = DOMAIN_BAR_COLOR.get(dom, "#378add")
+            if v:
+                chart += (f'<div style="flex:1;display:flex;flex-direction:column;'
+                          f'justify-content:flex-end;height:100%">'
+                          f'<div style="font-size:9.5px;color:#495057;text-align:center;'
+                          f'margin-bottom:2px">{pct:.0f}%</div>'
+                          f'<div style="background:{col};height:{max(pct,0.6):.1f}%;'
+                          f'border-radius:3px 3px 0 0"></div></div>')
+            else:
+                chart += ('<div style="flex:1;display:flex;flex-direction:column;'
+                          'justify-content:flex-end;height:100%">'
+                          '<div style="font-size:9.5px;color:#adb5bd;text-align:center;'
+                          'margin-bottom:2px">&ndash;</div>'
+                          '<div style="background:#eef0f4;height:0.6%;border-radius:3px 3px 0 0"></div></div>')
+            labels += (f'<div style="flex:1;text-align:center;font-size:9px;color:#6c757d">'
+                       f'{DOMAIN_ABBR.get(dom, dom)}</div>')
+        chart += "</div>" + labels + "</div>"
+
+        th = ('padding:6px 8px;font-size:10px;color:#495057;text-transform:uppercase;'
+              'letter-spacing:.04em;border-bottom:2px solid #dee2e6')
+        td = "padding:6px 8px;border-bottom:1px solid #e9ecef"
+        table = (f'<table style="width:100%;border-collapse:collapse;font-size:11.5px">'
+                 f'<thead><tr style="background:#f0f2f5">'
+                 f'<th style="{th};text-align:left">Domain</th>'
+                 f'<th style="{th};text-align:right">Score</th>'
+                 f'<th style="{th};text-align:right">Contrib.</th>'
+                 f'<th style="{th};text-align:right">Gap</th>'
+                 f'<th style="{th};text-align:left">Services</th>'
+                 f'</tr></thead><tbody>')
+        for dom in DOMAIN_ORDER:
+            v = db.get(dom)
+            name = DOMAIN_ABBR_LABEL.get(dom, DOMAIN_LABELS.get(dom, dom))
+            if not v:
+                table += (f'<tr><td style="{td};color:#1c2541">{name}</td>'
+                          f'<td style="{td};text-align:right;color:#adb5bd;font-style:italic">N/A</td>'
+                          f'<td style="{td};text-align:right;color:#adb5bd">-</td>'
+                          f'<td style="{td};text-align:right;color:#adb5bd">-</td>'
+                          f'<td style="{td};color:#6c757d">Physically absent</td></tr>')
+                continue
             pct = v["score_pct"]
-            bar = "#c62828" if pct < 25 else ("#ef6c00" if pct < 50 else "#2e7d32")
-            dom_html += f"""<tr>
-              <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;font-weight:600;color:#1c2541">{name}
-                <span style="font-weight:400;color:#adb5bd;font-size:10.5px">&middot; {v['services_assessed']}</span></td>
-              <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right">
-                <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
-                  <div style="background:#e9ecef;border-radius:3px;height:6px;width:80px;position:relative;overflow:hidden">
-                    <div style="position:absolute;top:0;left:0;height:100%;width:{min(pct,100)}%;background:{bar};border-radius:3px"></div>
-                  </div>{pct:.2f}%
-                </div></td>
-              <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;font-weight:600;color:#1c2541">{v['contribution_pp']:.2f}</td>
-              <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;color:#6c757d">{v['max_contribution_pp']:.2f}</td>
-              <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;color:#c62828">{v['gap_pp']:.2f}</td>
-            </tr>"""
-        dom_html += "</tbody></table></div>"
+            col = DOMAIN_BAR_COLOR.get(dom, "#378add")
+            table += (f'<tr><td style="{td};font-weight:600;color:#1c2541">{name}</td>'
+                      f'<td style="{td};text-align:right">'
+                      f'<div style="display:flex;align-items:center;justify-content:flex-end;gap:7px">'
+                      f'<div style="background:#e9ecef;border-radius:3px;height:6px;width:60px;overflow:hidden">'
+                      f'<div style="height:100%;width:{min(pct,100):.1f}%;background:{col};border-radius:3px"></div>'
+                      f'</div>{pct:.1f}%</div></td>'
+                      f'<td style="{td};text-align:right;font-weight:600;color:#1c2541">{v["contribution_pp"]:.2f}</td>'
+                      f'<td style="{td};text-align:right;color:#c62828">{v["gap_pp"]:.2f}</td>'
+                      f'<td style="{td};color:#6c757d">{v["services_assessed"]} applicable</td></tr>')
+        table += "</tbody></table>"
+
+        dom_html = (
+            '<div class="card"><h2>Domain Scores</h2>'
+            '<div style="font-size:10.5px;color:#6c757d;margin-bottom:10px;line-height:1.5">'
+            'Score is the share of each domain\'s own potential that the building reaches. '
+            'Contribution is the points it adds to the headline result, and Gap the points '
+            'it leaves on the table. Contributions sum to the SRI; maxima sum to 100.</div>'
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'
+            f'gap:20px;align-items:start"><div>{chart}</div><div>{table}</div></div></div>')
         st.markdown(dom_html, unsafe_allow_html=True)
 
-    # ── ROW 3: IC Table ───────────────────────────────────────────────────────
-    ic_html = """<div class="card"><h2>Impact Criteria Breakdown</h2>
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead><tr style="background:#f0f2f5">
-      <th style="padding:6px 10px;text-align:left;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Impact Criterion</th>
-      <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">SR (%)</th>
-      <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Weight</th>
-      <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Contribution</th>
-    </tr></thead><tbody>"""
-    total_contrib = 0
-    for icn, icv in ic.items():
-        sr = icv["SR"]; w = icv["weight"]; c = icv["contribution"]
-        total_contrib += c
-        bar_w = min(sr, 100)
-        ic_html += f"""<tr>
-          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;font-weight:600">{icn}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right">
-            <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
-              <div style="background:#e9ecef;border-radius:3px;height:6px;width:80px;position:relative;overflow:hidden">
-                <div style="position:absolute;top:0;left:0;height:100%;width:{bar_w}%;background:#1c6bb5;border-radius:3px"></div>
-              </div>
-              {sr:.2f}%
-            </div>
-          </td>
-          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;color:#6c757d">{w:.4f}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;font-weight:600;color:#1c2541">{c:.2f}</td>
-        </tr>"""
-    ic_html += f"""<tr style="background:#f8fafc;font-weight:700;border-top:2px solid #dee2e6">
-      <td colspan="3" style="padding:7px 10px;color:#1c2541">TOTAL SRI</td>
-      <td style="padding:7px 10px;text-align:right;font-size:14px;color:#1c2541">{total_contrib:.2f}%</td>
-    </tr></tbody></table></div>"""
-    st.markdown(ic_html, unsafe_allow_html=True)
+    # ── Impact criteria ───────────────────────────────────────────────────────
+    # Full names and the KF group each criterion belongs to. The engine keys are
+    # abbreviations, and "Flex" on screen hid that this one criterion carries a
+    # third of the whole score. The chart is CSS for the same reason as above.
+    ic_rows = [(k, v) for k, v in ic.items() if k in IC_META]
+    legend = ('<div style="font-size:10.5px;color:#6c757d;margin-bottom:10px">'
+              'Bar colours indicate the KF group: ')
+    for kfk, kfn in (("KF1", "Energy Performance"), ("KF2", "Occupant Adaptability"),
+                     ("KF3", "Grid Flexibility")):
+        legend += (f'<span style="color:{KF_COLOR[kfk]};font-weight:700">&#9632; {kfk} {kfn}'
+                   f'</span>&nbsp;&nbsp;')
+    legend += "</div>"
 
-    # ── ROW 2: KF Cards ───────────────────────────────────────────────────────
+    chart = '<div style="display:flex;flex-direction:column;gap:7px">'
+    for k, v in ic_rows:
+        name, kfk, _ = IC_META[k]
+        sr = v["SR"]
+        chart += (f'<div style="display:flex;align-items:center;gap:8px">'
+                  f'<div style="flex:0 0 132px;font-size:10px;color:#495057;text-align:right;'
+                  f'line-height:1.25">{name}</div>'
+                  f'<div style="flex:1;background:#eef0f4;border-radius:3px;height:14px;overflow:hidden">'
+                  f'<div style="height:100%;width:{min(sr,100):.1f}%;background:{KF_COLOR[kfk]};'
+                  f'border-radius:3px"></div></div>'
+                  f'<div style="flex:0 0 42px;font-size:10px;color:#495057">{sr:.1f}%</div></div>')
+    chart += "</div>"
+
+    th = ('padding:6px 8px;font-size:10px;color:#495057;text-transform:uppercase;'
+          'letter-spacing:.04em;border-bottom:2px solid #dee2e6')
+    td = "padding:6px 8px;border-bottom:1px solid #e9ecef"
+    table = (f'<table style="width:100%;border-collapse:collapse;font-size:11.5px">'
+             f'<thead><tr style="background:#f0f2f5">'
+             f'<th style="{th};text-align:left">Impact Criterion</th>'
+             f'<th style="{th};text-align:center">KF</th>'
+             f'<th style="{th};text-align:right">w(ic)</th>'
+             f'<th style="{th};text-align:right">SR(ic)</th>'
+             f'<th style="{th};text-align:right">Contrib.</th>'
+             f'</tr></thead><tbody>')
+    total_contrib = 0
+    for k, v in ic_rows:
+        name, kfk, wtxt = IC_META[k]
+        total_contrib += v["contribution"]
+        table += (f'<tr><td style="{td};color:#1c2541">{name}</td>'
+                  f'<td style="{td};text-align:center">'
+                  f'<span style="background:{KF_COLOR[kfk]};color:white;font-size:9px;'
+                  f'font-weight:700;padding:2px 6px;border-radius:8px">{kfk}</span></td>'
+                  f'<td style="{td};text-align:right;color:#6c757d">{wtxt}</td>'
+                  f'<td style="{td};text-align:right">{v["SR"]:.1f}%</td>'
+                  f'<td style="{td};text-align:right;font-weight:600;color:#1c2541">'
+                  f'{v["contribution"]:.2f}%</td></tr>')
+    table += (f'<tr style="background:#f8fafc;border-top:2px solid #dee2e6">'
+              f'<td colspan="4" style="padding:7px 8px;font-weight:700;color:#1c2541">TOTAL SRI</td>'
+              f'<td style="padding:7px 8px;text-align:right;font-weight:700;font-size:13px;'
+              f'color:#1c2541">{total_contrib:.2f}%</td></tr></tbody></table>')
+
+    st.markdown('<div class="card"><h2>Impact Criteria (IC) Breakdown</h2>'
+                + legend
+                + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'
+                  'gap:20px;align-items:start"><div>' + chart + '</div><div>' + table
+                + "</div></div></div>", unsafe_allow_html=True)
+
+
+    # ── Key functionalities ───────────────────────────────────────────────────
+    # One markdown block inside a card, not three st.columns. Columns meant three
+    # separate blocks, so the three panels floated on the page background with no
+    # white card behind them and no section heading above them.
     kf_styles = {
-        "KF1": ("kf1","#1565c0","#e8f4fd","KF1","Energy Performance & Operation"),
-        "KF2": ("kf2","#6a1b9a","#f5eefb","KF2","Adaptation to Occupant Needs"),
-        "KF3": ("kf3","#bf360c","#fdf0eb","KF3","Response to Energy Grid"),
+        "KF1": ("#1565c0", "#e8f4fd", "Energy Performance & Operation"),
+        "KF2": ("#6a1b9a", "#f5eefb", "Adaptation to Occupant Needs"),
+        "KF3": ("#bf360c", "#fdf0eb", "Response to the Energy Grid"),
     }
-    kf_cols = st.columns(3)
-    for i, (kfk, kfv) in enumerate(kf.items()):
-        _, color_kf, bg_kf, tag, name = kf_styles.get(kfk, ("","#333","#eee",kfk,""))
+    kf_html = ('<div class="card"><h2>Key Functionalities</h2>'
+               '<div style="font-size:10.5px;color:#6c757d;margin-bottom:12px">'
+               'The three pillars of the SRI as defined in the Delegated Regulation. '
+               'Each groups the impact criteria listed under it.</div>'
+               '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">')
+    for kfk, kfv in kf.items():
+        col, bg, name = kf_styles.get(kfk, ("#333", "#eee", kfk))
         pct = kfv["SR"]
-        bar_w = min(pct, 100)
-        with kf_cols[i]:
-            st.markdown(f"""
-            <div style="background:{bg_kf};border:2px solid {color_kf};border-radius:8px;padding:16px;height:100%">
-              <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:{color_kf}">{tag}</div>
-              <div style="font-size:12px;font-weight:700;color:#1e293b;margin:4px 0 10px;line-height:1.3">{name}</div>
-              <div style="font-size:26px;font-weight:800;color:{color_kf};line-height:1">{pct:.2f}%</div>
-              <div style="height:7px;background:rgba(0,0,0,.1);border-radius:4px;margin:8px 0">
-                <div style="height:7px;background:{color_kf};border-radius:4px;width:{bar_w}%"></div>
-              </div>
-              <div style="font-size:10px;color:#64748b">{" &middot; ".join(kfv.get("ics",[]))}</div>
-            </div>
-            """, unsafe_allow_html=True)
+        kf_html += (
+            f'<div style="background:{bg};border:2px solid {col};border-radius:8px;padding:14px">'
+            f'<div style="font-size:10px;font-weight:800;text-transform:uppercase;'
+            f'letter-spacing:.08em;color:{col}">{kfk}</div>'
+            f'<div style="font-size:12px;font-weight:700;color:#1e293b;margin:4px 0 10px;'
+            f'line-height:1.3">{name}</div>'
+            f'<div style="font-size:26px;font-weight:800;color:{col};line-height:1">{pct:.2f}%</div>'
+            f'<div style="height:7px;background:rgba(0,0,0,.1);border-radius:4px;margin:8px 0">'
+            f'<div style="height:7px;background:{col};border-radius:4px;width:{min(pct,100)}%"></div></div>'
+            f'<div style="font-size:10px;color:#64748b">'
+            f'{" &middot; ".join(IC_META.get(i, (i,))[0] for i in kfv.get("ics", []))}</div></div>')
+    kf_html += "</div></div>"
+    st.markdown(kf_html, unsafe_allow_html=True)
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
@@ -832,6 +907,29 @@ def _level_text(code: str, lv) -> str:
 
 DOMAIN_ORDER = ["Heating", "DHW", "Cooling", "Ventilation", "Lighting",
                 "Dynamic_Envelope", "Electricity", "EV_Charging", "Monitoring_Control"]
+DOMAIN_ABBR = {"Heating": "H", "DHW": "DHW", "Cooling": "C", "Ventilation": "V",
+               "Lighting": "L", "Dynamic_Envelope": "DE", "Electricity": "E",
+               "EV_Charging": "EV", "Monitoring_Control": "MC"}
+DOMAIN_ABBR_LABEL = {"Heating": "Heating (H)", "DHW": "DHW", "Cooling": "Cooling (C)",
+                     "Ventilation": "Ventilation (V)", "Lighting": "Lighting (L)",
+                     "Dynamic_Envelope": "Dyn. Envelope (DE)", "Electricity": "Electricity (E)",
+                     "EV_Charging": "EV Charging (EV)", "Monitoring_Control": "Mon. & Ctrl (MC)"}
+DOMAIN_BAR_COLOR = {"Heating": "#378add", "DHW": "#1baf7a", "Cooling": "#2a78d6",
+                    "Ventilation": "#378add", "Lighting": "#eda100",
+                    "Dynamic_Envelope": "#eb6834", "Electricity": "#eb6834",
+                    "EV_Charging": "#888780", "Monitoring_Control": "#7f77dd"}
+# Full names, KF group and weight of each impact criterion, as the Regulation
+# writes them. The engine keys are abbreviations, which read as jargon on screen.
+IC_META = {
+    "EE":      ("Energy Efficiency",             "KF1", "1/6"),
+    "Flex":    ("Energy Flexibility & Storage",  "KF3", "1/3"),
+    "Comfort": ("Comfort",                       "KF2", "1/12"),
+    "Conv":    ("Convenience",                   "KF2", "1/12"),
+    "Health":  ("Health, Well-being & Access.",  "KF2", "1/12"),
+    "Maint":   ("Maintenance & Fault Prediction","KF1", "1/6"),
+    "Info":    ("Information to Occupants",      "KF2", "1/12"),
+}
+KF_COLOR = {"KF1": "#1565c0", "KF2": "#6a1b9a", "KF3": "#b71c1c"}
 DOMAIN_LABELS = {"Dynamic_Envelope": "Dynamic Envelope", "EV_Charging": "EV Charging",
                  "Monitoring_Control": "Monitoring & Control"}
 
@@ -982,6 +1080,10 @@ def render_assessor_mode():
                     # The dropdown already carries the official wording of the
                     # level, so repeating it here said nothing. What the assessor
                     # cannot see anywhere else is what this one change is worth.
+                    # One line: what moved and what it is worth. The evidence
+                    # behind the original level and the raw measurements were
+                    # also here, and they buried the only thing this panel
+                    # exists to say. Both are still in the downloadable JSON.
                     delta = _level_impact(eng, svc_base, code, True, chosen)
                     up = delta >= 0
                     st.markdown(
@@ -992,10 +1094,6 @@ def render_assessor_mode():
                         f"Changed from L{derived} &middot; <strong>impact if applied: "
                         f"{'+' if up else '&minus;'}{abs(delta):.2f} pp</strong></div>",
                         unsafe_allow_html=True)
-                    with st.expander("Details: what the engine measured", expanded=False):
-                        st.caption(s.get("justification", "") or "No justification recorded.")
-                        if s.get("data"):
-                            st.json(s["data"], expanded=False)
                 st.markdown("<hr style='margin:6px 0;border:none;border-top:1px solid #eef1f8'>",
                             unsafe_allow_html=True)
                 selections[code] = (applicable, chosen)
@@ -1081,31 +1179,37 @@ def _render_changes_summary(eng, svc_list, svc_base, result_base):
         to = s["level_achieved"]
         col = "#1a9641" if delta > 0 else ("#d7191c" if delta < 0 else "#6c757d")
         rows += (f"<tr style='border-bottom:1px solid #e9ecef'>"
-                 f"<td style='padding:7px 10px;font-weight:700;font-family:monospace'>{s['service']}</td>"
-                 f"<td style='padding:7px 10px'>{s['description']}</td>"
-                 f"<td style='padding:7px 10px;text-align:center'>"
+                 f"<td style='padding:7px 8px;font-weight:700;font-family:monospace;"
+                 f"white-space:nowrap'>{s['service']}</td>"
+                 f"<td style='padding:7px 8px'>{s['description']}</td>"
+                 f"<td style='padding:7px 8px;text-align:center'>"
                  f"{'L'+str(frm) if frm is not None else 'N/A'}</td>"
-                 f"<td style='padding:7px 10px;text-align:center;font-weight:700'>"
+                 f"<td style='padding:7px 8px;text-align:center;font-weight:700'>"
                  f"{'L'+str(to) if to is not None else 'N/A'}</td>"
-                 f"<td style='padding:7px 10px;text-align:right;font-weight:700;color:{col}'>"
-                 f"{delta:+.2f} pp</td>"
-                 f"<td style='padding:7px 10px;font-size:11px;color:#495057'>"
+                 f"<td style='padding:7px 8px;text-align:right;font-weight:700;color:{col};"
+                 f"white-space:nowrap'>{delta:+.2f} pp</td>"
+                 f"<td style='padding:7px 8px;font-size:11px;color:#495057'>"
                  f"{s.get('official_criterion','')}</td></tr>")
     st.markdown(f"""
     <div class="card"><h2>Changes against the evidence-derived assessment</h2>
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
+      <colgroup>
+        <col style="width:7%"><col style="width:24%"><col style="width:7%">
+        <col style="width:7%"><col style="width:11%"><col style="width:44%">
+      </colgroup>
       <thead><tr style="background:#1c2541">
-        <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase">Service</th>
-        <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase"></th>
-        <th style="padding:8px 10px;text-align:center;color:white;font-size:10px;text-transform:uppercase">From</th>
-        <th style="padding:8px 10px;text-align:center;color:white;font-size:10px;text-transform:uppercase">To</th>
-        <th style="padding:8px 10px;text-align:right;color:white;font-size:10px;text-transform:uppercase">Impact</th>
-        <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase">That level requires</th>
+        <th style="padding:8px;text-align:left;color:white;font-size:10px;text-transform:uppercase">Code</th>
+        <th style="padding:8px;text-align:left;color:white;font-size:10px;text-transform:uppercase">Service</th>
+        <th style="padding:8px;text-align:center;color:white;font-size:10px;text-transform:uppercase">From</th>
+        <th style="padding:8px;text-align:center;color:white;font-size:10px;text-transform:uppercase">To</th>
+        <th style="padding:8px;text-align:right;color:white;font-size:10px;text-transform:uppercase">Impact</th>
+        <th style="padding:8px;text-align:left;color:white;font-size:10px;text-transform:uppercase">That level requires</th>
       </tr></thead><tbody>{rows}
       <tr style="background:#f8fafc;font-weight:700;border-top:2px solid #dee2e6">
-        <td colspan="4" style="padding:8px 10px;color:#1c2541">
+        <td colspan="4" style="padding:8px;color:#1c2541">
           Sum of individual contributions</td>
-        <td style="padding:8px 10px;text-align:right;font-size:14px;color:#1c2541">{total:+.2f} pp</td>
+        <td style="padding:8px;text-align:right;font-size:14px;color:#1c2541;
+                   white-space:nowrap">{total:+.2f} pp</td>
         <td></td></tr>
     </tbody></table>
     <div style="font-size:10.5px;color:#6c757d;margin-top:8px;font-style:italic">
