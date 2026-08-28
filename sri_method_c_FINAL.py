@@ -1744,8 +1744,12 @@ def check_V1c(csv_files: dict) -> dict:
         conf = 0.60
         note = f"Only {n_unique} duty level(s) observed → appears fixed speed → L1."
 
-    status, gate_note = _gate(VERIFIED, coverage_pct=cov["coverage_pct"],
-                              n_records=len(vals))
+    # No coverage floor here. The ComfoAir logs the duty on change, not on a fixed
+    # sampling interval, so a fan holding one speed overnight writes no rows at all.
+    # The resulting "gaps" are constant values, not missing data, and gating on them
+    # would also contradict V-2c, V-3, H-1a and MC-3, which read state-change series
+    # with lower coverage still and are reported as verified. The record floor stays.
+    status, gate_note = _gate(VERIFIED, n_records=len(vals))
     return _result("V-1c", status, level, conf,
                    f"ComfoAirQ_Supply-Fan-Duty CSV: {len(vals)} records, {cov['period_days']} days, {gate_note}"
                    f"coverage {cov['coverage_pct']}%. {note} "
@@ -3277,6 +3281,51 @@ def calculate_sri_score(service_results: list) -> dict:
 
     applicable = sum(1 for r in service_results if r["applicability_status"] not in NA_STATUSES)
 
+    # ── PER-DOMAIN VIEW ──────────────────────────────────────────────────────
+    # The impact-criterion breakdown answers "how does the building do on energy
+    # savings", which is a category of the Regulation. It cannot answer "which
+    # part of the building is holding the score down", and that is the first
+    # thing anyone reading the result wants to know. Same weights, same levels,
+    # no new judgement: the domain contributions sum to the headline score and
+    # the maxima sum to 100, which is asserted below.
+    dom_num, dom_den, dom_count = {}, {}, {}
+    for res in service_results:
+        if res["applicability_status"] in NA_STATUSES:
+            continue
+        code, domain = res["service"], res["domain"]
+        cat = SERVICE_CATALOG[code]
+        dw = DOMAIN_WEIGHTS[domain]
+        lvl = 0 if res["applicability_status"] == UNRESOLVED else (res["level_achieved"] or 0)
+        actual = cat["levels"].get(lvl, {})
+        top = cat["levels"].get(cat["max_fl"], {})
+        n = dom_num.setdefault(domain, {ic: 0.0 for ic in ic_keys})
+        d = dom_den.setdefault(domain, {ic: 0.0 for ic in ic_keys})
+        dom_count[domain] = dom_count.get(domain, 0) + 1
+        for ic in ic_keys:
+            n[ic] += dw[ic] * actual.get(ic, 0)
+            d[ic] += dw[ic] * top.get(ic, 0)
+
+    domain_breakdown = {}
+    for domain, n in dom_num.items():
+        d = dom_den[domain]
+        live = [ic for ic in ic_keys if d[ic] > 0]
+        w_live = sum(float(IMPACT_WEIGHTS[ic]) for ic in live)
+        own = sum(float(IMPACT_WEIGHTS[ic]) * (n[ic] / d[ic]) for ic in live)
+        contrib = sum(float(IMPACT_WEIGHTS[ic]) * (n[ic] / den_main[ic])
+                      for ic in ic_keys if den_main[ic] > 0)
+        top_contrib = sum(float(IMPACT_WEIGHTS[ic]) * (d[ic] / den_main[ic])
+                          for ic in ic_keys if den_main[ic] > 0)
+        domain_breakdown[domain] = {
+            # Share of this domain's own potential that the building reaches.
+            "score_pct": round(own / w_live * 100, 2) if w_live else 0.0,
+            # Points of the headline SRI that this domain accounts for.
+            "contribution_pp": round(contrib * 100, 2),
+            "max_contribution_pp": round(top_contrib * 100, 2),
+            # Points left on the table if this domain reached its maximum.
+            "gap_pp": round((top_contrib - contrib) * 100, 2),
+            "services_assessed": dom_count[domain],
+        }
+
     return {
         "sri_score_pct": sri_lower,
         "sri_class": _sri_class(sri_lower),
@@ -3290,12 +3339,104 @@ def calculate_sri_score(service_results: list) -> dict:
         "status_counts": status_counts,
         "impact_criterion_breakdown": ic_breakdown,
         "kf_breakdown": kf_breakdown,
+        "domain_breakdown": domain_breakdown,
     }
 
 
 # ════════════════════════════════════════════════════════════════════════════════
 # RUN ALL 54 SERVICE CHECKS
 # ════════════════════════════════════════════════════════════════════════════════
+
+class _EntityRecorder(dict):
+    """A csv_files dict that remembers which entities a check actually opened.
+
+    Provenance is reported to the reader, so it has to come from what the code
+    did rather than from what the justification happens to say in prose. Only
+    retrieval by key is recorded: a check that walks the whole inventory with
+    .items() looking for a name pattern is scanning, not reading a series, and
+    that distinction is exactly what the evidence column needs to preserve.
+    """
+
+    def __init__(self, source: dict):
+        super().__init__(source)
+        self.used = set()
+
+    def __getitem__(self, key):
+        self.used.add(key)
+        return super().__getitem__(key)
+
+    def get(self, key, default=None):
+        if key in self:
+            self.used.add(key)
+        return super().get(key, default)
+
+
+def _evidence(result: dict, used: set, csv_files: dict) -> str:
+    """One short line saying where this assessment came from.
+
+    Four shapes cover all 54 services: named time series, an inventory sweep
+    that found nothing to name, documentary sources, and services the building
+    does not have. Counts, never entity names, so nothing internal leaks out.
+    """
+    status = result["applicability_status"]
+    data = result.get("data") or {}
+
+    if status in NA_STATUSES:
+        return "DBL / IFC &middot; system not present"
+
+    if used:
+        n_records = sum(len(csv_files[k]) for k in used if k in csv_files)
+        unit = "entity" if len(used) == 1 else "entities"
+        return f"CSV &middot; {len(used)} {unit} &middot; {n_records:,} records"
+
+    scanned = data.get("entities_scanned")
+    if scanned:
+        return f"CSV &middot; {scanned} entities scanned"
+
+    # Checks that sweep the inventory with .items() name nothing, so their counts
+    # are read back from the fields they chose to publish. The key names differ
+    # per service because each measures a different thing.
+    def _count(*names):
+        for n in names:
+            v = data.get(n)
+            if isinstance(v, (int, float)) and v:
+                return int(v)
+            if isinstance(v, (list, tuple, set, dict)) and len(v):
+                return len(v)
+        return 0
+
+    zones = _count("n_zones", "rooms", "zones", "cooling_zones")
+    if not zones:
+        # A check may split its zones by mode, in which case the evidence is the
+        # set it looked at, not either half of it.
+        split = set()
+        for n in ("zones_heating", "zones_cooling"):
+            v = data.get(n)
+            if isinstance(v, (list, tuple, set)):
+                split |= set(v)
+        zones = len(split)
+    records = _count("total_records", "cooling_records")
+    hours = _count("heating_hours", "cooling_hours")
+    if zones or records:
+        parts = ["CSV"]
+        if zones:
+            parts.append(f"{zones} {'zone' if zones == 1 else 'zones'}")
+        if records:
+            parts.append(f"{records:,} records")
+        elif hours:
+            parts.append(f"{data.get('heating_hours', 0) + data.get('cooling_hours', 0):,} hours")
+        return " &middot; ".join(parts)
+
+    if result["service"] in _load_manual():
+        cited = []
+        for token in re.findall(r"DBL\s?0?\d+|IFC", result.get("justification") or ""):
+            token = token.replace(" ", "")
+            if token not in cited:
+                cited.append(token)
+        return " / ".join(cited[:3]) if cited else "DBL / IFC"
+
+    return "&mdash;"
+
 
 def run_all_checks(csv_files: dict) -> list:
     """Run all 54 service check functions. Returns list of result dicts."""
@@ -3326,7 +3467,9 @@ def run_all_checks(csv_files: dict) -> list:
     results = []
     for fn in checkers:
         try:
-            r = fn(csv_files)
+            recorder = _EntityRecorder(csv_files)
+            r = fn(recorder)
+            r["evidence"] = _evidence(r, recorder.used, csv_files)
             results.append(r)
         except Exception as e:
             import traceback

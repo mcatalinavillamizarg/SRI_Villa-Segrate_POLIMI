@@ -411,8 +411,11 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
     c1, c2 = st.columns([3, 2])
 
     with c1:
-        st.markdown('<div class="card"><h2>SRI Class Scale</h2>', unsafe_allow_html=True)
-        scale_html = '<div style="display:flex;gap:4px">'
+        # One markdown call per card. Streamlit closes any tag left open at the
+        # end of a block, so opening the card here and closing it in a later
+        # call left the heading alone in an empty box with its content outside.
+        scale_html = ('<div class="card"><h2>SRI Class Scale</h2>'
+                      '<div style="display:flex;gap:4px">')
         for cls, rng, _ in CLASS_RANGES:
             bg = CLASS_COLORS[cls]
             is_active = cls == sri_cls
@@ -438,32 +441,28 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
         st.markdown(scale_html + arrow_html + unresolved_note + "</div>", unsafe_allow_html=True)
 
     with c2:
-        st.markdown('<div class="card"><h2>Summary</h2>', unsafe_allow_html=True)
+        # The headline score and class are already the largest thing on the
+        # page. Repeating them here, once as "SRI Score" and again as "Lower
+        # bound" (the engine returns the same number for both), made three
+        # copies of one figure read as three different findings.
         unresolved = result.get("unresolved_services", [])
-        stats_html = f"""
+        n_na = 54 - n_appl
+        _cell = ('<div style="text-align:center;background:#f8fafc;border-radius:6px;'
+                 'padding:12px"><div style="font-size:24px;font-weight:800;'
+                 'color:#1c2541">{v}</div><div style="font-size:9px;'
+                 'text-transform:uppercase;color:#6c757d;letter-spacing:.06em">'
+                 '{l}</div></div>')
+        stats_html = f"""<div class="card"><h2>Summary</h2>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div style="text-align:center;background:#f8fafc;border-radius:6px;padding:12px">
-            <div style="font-size:26px;font-weight:800;color:#1c2541">{sri_pct:.2f}%</div>
-            <div style="font-size:9px;text-transform:uppercase;color:#6c757d;letter-spacing:.06em">SRI Score</div>
-          </div>
-          <div style="text-align:center;background:{color};border-radius:6px;padding:12px">
-            <div style="font-size:26px;font-weight:800;color:white">Class {sri_cls}</div>
-            <div style="font-size:9px;text-transform:uppercase;color:rgba(255,255,255,.8);letter-spacing:.06em">Classification</div>
-          </div>
-          <div style="text-align:center;background:#f8fafc;border-radius:6px;padding:10px">
-            <div style="font-size:20px;font-weight:800;color:#1c2541">{sri_lo:.2f}%</div>
-            <div style="font-size:9px;text-transform:uppercase;color:#6c757d">Lower bound</div>
-          </div>
-          <div style="text-align:center;background:#f8fafc;border-radius:6px;padding:10px">
-            <div style="font-size:20px;font-weight:800;color:#1c2541">{sri_hi:.2f}%</div>
-            <div style="font-size:9px;text-transform:uppercase;color:#6c757d">Upper bound</div>
-          </div>
-          <div style="text-align:center;background:#f8fafc;border-radius:6px;padding:10px;grid-column:1/-1">
-            <div style="font-size:20px;font-weight:800;color:#1c2541">{n_appl}/54</div>
-            <div style="font-size:9px;text-transform:uppercase;color:#6c757d">Applicable services</div>
-          </div>
+          {_cell.format(v=f"{n_appl}/54", l="Applicable services")}
+          {_cell.format(v=n_na, l="Not applicable")}
+          {_cell.format(v=f"{sri_hi:.2f}%", l="Upper bound")}
+          {_cell.format(v=len(unresolved), l="Unresolved")}
         </div>
-        </div>"""
+        <div style="font-size:10.5px;color:#6c757d;margin-top:10px;line-height:1.5">
+          The upper bound scores every unresolved service at its maximum level.
+          The headline result scores them at L0.
+        </div></div>"""
         st.markdown(stats_html, unsafe_allow_html=True)
 
     # ── ROW 2: KF Cards ───────────────────────────────────────────────────────
@@ -522,16 +521,14 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
     # ── ROW 3: IC Table ───────────────────────────────────────────────────────
-    st.markdown('<div class="card"><h2>Impact Criteria Breakdown</h2>', unsafe_allow_html=True)
-    ic_html = """<table style="width:100%;border-collapse:collapse;font-size:12px">
+    ic_html = """<div class="card"><h2>Impact Criteria Breakdown</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
     <thead><tr style="background:#f0f2f5">
       <th style="padding:6px 10px;text-align:left;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Impact Criterion</th>
       <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">SR (%)</th>
       <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Weight</th>
       <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Contribution</th>
-    </tr></thead><tbody>""".replace(
-        "__LASTCOL__",
-        "Official criterion for the level set" if override_mode else "Justification")
+    </tr></thead><tbody>"""
     total_contrib = 0
     for icn, icv in ic.items():
         sr = icv["SR"]; w = icv["weight"]; c = icv["contribution"]
@@ -556,10 +553,49 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
     </tr></tbody></table></div>"""
     st.markdown(ic_html, unsafe_allow_html=True)
 
+    # ── Domain breakdown ──────────────────────────────────────────────────────
+    # Ordered by the points each domain leaves on the table, so the first row is
+    # the one worth acting on rather than the one that happens to come first in
+    # the catalogue.
+    db = result.get("domain_breakdown") or {}
+    if db:
+        rows = sorted(db.items(), key=lambda kv: -kv[1]["gap_pp"])
+        dom_html = """<div class="card"><h2>Domain Breakdown</h2>
+        <div style="font-size:11px;color:#6c757d;margin-bottom:12px;line-height:1.5">
+        Each domain scored against its own potential, and the points it accounts
+        for in the headline result. Contributions sum to the SRI; maxima sum to 100.
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#f0f2f5">
+          <th style="padding:6px 10px;text-align:left;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Domain</th>
+          <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Score</th>
+          <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Contribution</th>
+          <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Of a possible</th>
+          <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Gap</th>
+        </tr></thead><tbody>"""
+        for dom, v in rows:
+            name = DOMAIN_LABELS.get(dom, dom)
+            pct = v["score_pct"]
+            bar = "#c62828" if pct < 25 else ("#ef6c00" if pct < 50 else "#2e7d32")
+            dom_html += f"""<tr>
+              <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;font-weight:600;color:#1c2541">{name}
+                <span style="font-weight:400;color:#adb5bd;font-size:10.5px">&middot; {v['services_assessed']}</span></td>
+              <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right">
+                <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
+                  <div style="background:#e9ecef;border-radius:3px;height:6px;width:80px;position:relative;overflow:hidden">
+                    <div style="position:absolute;top:0;left:0;height:100%;width:{min(pct,100)}%;background:{bar};border-radius:3px"></div>
+                  </div>{pct:.2f}%
+                </div></td>
+              <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;font-weight:600;color:#1c2541">{v['contribution_pp']:.2f}</td>
+              <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;color:#6c757d">{v['max_contribution_pp']:.2f}</td>
+              <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;color:#c62828">{v['gap_pp']:.2f}</td>
+            </tr>"""
+        dom_html += "</tbody></table></div>"
+        st.markdown(dom_html, unsafe_allow_html=True)
+
     # ── ROW 4: Service Table ──────────────────────────────────────────────────
     _detail_title = ("Assessment detail (54 services)" if override_mode
                      else "Service Assessment Detail (54 services)")
-    st.markdown(f'<div class="card"><h2>{_detail_title}</h2>', unsafe_allow_html=True)
 
     STATUS_BADGE = {
         "VERIFIED":             ('<span style="background:#d4edda;color:#155724;border:1px solid #c3e6cb;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">Verified</span>', True),
@@ -577,17 +613,22 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
         4:    'background:#f1f8e9;color:#33691e;border-color:#c5e1a5',
     }
 
-    tbl = """<div style="border-radius:6px;border:1px solid #e2e6ea;overflow:hidden;max-height:700px;overflow-y:auto">
+    # No inner scroll box. All 54 rows flow with the page, so the table can be
+    # printed, exported to PDF or captured in one screenshot, which a nested
+    # scroll area makes impossible.
+    tbl = f"""<div class="card"><h2>{_detail_title}</h2>
+    <div style="border-radius:6px;border:1px solid #e2e6ea;overflow:hidden">
     <table style="width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed">
     <thead><tr style="background:#1c2541">
       <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:70px;position:sticky;top:0">Code</th>
       <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:190px;position:sticky;top:0">Service</th>
       <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:100px;position:sticky;top:0">Status</th>
-      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:60px;position:sticky;top:0">FL</th>
-      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0">__LASTCOL__</th>
+      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:52px;position:sticky;top:0">FL</th>
+      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0">__CRITCOL__</th>
+      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:172px;position:sticky;top:0">Evidence</th>
     </tr></thead><tbody>""".replace(
-        "__LASTCOL__",
-        "Official criterion for the level set" if override_mode else "Justification")
+        "__CRITCOL__",
+        "Official criterion for the level set" if override_mode else "Criterion for the level")
 
     domain_order = ["Heating","DHW","Cooling","Ventilation","Lighting","Dynamic_Envelope","Electricity","EV_Charging","Monitoring_Control"]
     domain_labels = {"Dynamic_Envelope":"Dynamic Envelope","EV_Charging":"EV Charging","Monitoring_Control":"Monitoring & Control"}
@@ -600,19 +641,24 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
         if not svcs:
             continue
         label = domain_labels.get(dom, dom)
-        tbl += f'<tr><td colspan="5" style="background:#e8ecf5;font-size:11px;font-weight:700;color:#1c2541;padding:6px 10px;border-top:2px solid #c5cff8;border-bottom:1px solid #c5cff8;text-transform:uppercase;letter-spacing:.04em">{label}</td></tr>'
+        tbl += f'<tr><td colspan="6" style="background:#e8ecf5;font-size:11px;font-weight:700;color:#1c2541;padding:6px 10px;border-top:2px solid #c5cff8;border-bottom:1px solid #c5cff8;text-transform:uppercase;letter-spacing:.04em">{label}</td></tr>'
         for s in svcs:
             badge_html, _ = STATUS_BADGE.get(s["applicability_status"], ('',''))
             fl = s["level_achieved"]
             fl_style = FL_STYLE.get(fl, FL_STYLE[None])
-            fl_label = f"L{fl}/{s['level_max']}" if fl is not None else "N/A"
-            if override_mode:
-                # A level chosen by the assessor has no evidence-based
-                # justification, so the column carries the official criterion
-                # for the level selected instead of an empty cell.
-                just = s.get("official_criterion", "") or "-"
+            # Bare level, no denominator. The maximum varies per service and
+            # putting it here invited the badge to be read as a fraction of it,
+            # which is not what a functionality level means.
+            fl_label = f"L{fl}" if fl is not None else "N/A"
+            # The official wording of the level, identical in both modes: the
+            # criterion does not depend on who chose the level.
+            just = s.get("official_criterion", "") or "&mdash;"
+            # Where the level came from. An assessor-set level has no evidence
+            # behind it, and saying so is the honest cell.
+            if s.get("assessor_changed") or s.get("overridden"):
+                evidence = "Set by assessor"
             else:
-                just = (s["justification"] or "")[:180] + ("..." if len(s.get("justification","")) > 180 else "")
+                evidence = s.get("evidence") or "&mdash;"
             if s.get("assessor_changed") or s.get("overridden"):
                 row_style = "border-bottom:1px solid #e9ecef;background:#faf5ff;box-shadow:inset 3px 0 0 #6a1b9a"
                 badge_html = ('<span style="background:#e8d5f5;color:#4a1a7a;border:1px solid #d6aef0;'
@@ -625,6 +671,7 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
               <td style="padding:7px 10px">{badge_html}</td>
               <td style="padding:7px 10px"><span style="padding:2px 8px;border-radius:8px;font-size:10.5px;font-weight:700;border:1px solid;white-space:nowrap;{fl_style}">{fl_label}</span></td>
               <td style="padding:7px 10px;font-size:11px;color:#495057;line-height:1.5">{just}</td>
+              <td style="padding:7px 10px;font-size:10.5px;color:#6c757d;line-height:1.5">{evidence}</td>
             </tr>"""
 
     tbl += "</tbody></table></div></div>"
@@ -752,17 +799,22 @@ def render_assessor_mode():
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown('<div class="card"><h2>Assessor worksheet</h2>', unsafe_allow_html=True)
+    # This section holds live widgets, so it cannot be emitted as one block and
+    # therefore cannot be wrapped in a card. A plain heading instead of a card
+    # that Streamlit would tear apart anyway.
     st.markdown(
-        "<div style='font-size:11.5px;color:#495057;line-height:1.6;margin-bottom:6px'>"
-        "The <em>Evidence</em> column shows the level the engine derived from operational "
-        "data. Changing a level reveals what the official catalogue requires for it."
+        "<h2 style='font-size:15px;font-weight:700;color:#1c2541;margin:6px 0 4px'>"
+        "Assessor worksheet</h2>"
+        "<div style='font-size:11.5px;color:#495057;line-height:1.6;margin-bottom:10px'>"
+        "Each service opens at the level the engine derived from operational data. "
+        "Changing one shows what that change is worth in SRI points."
         "</div>", unsafe_allow_html=True)
 
     if st.button("Reset all to evidence-derived levels", key="reset_assessor"):
         for s in svc_base:
             st.session_state.pop(f"fl_{s['service']}", None)
             st.session_state.pop(f"ap_{s['service']}", None)
+        st.session_state.ws_saved = {}
         st.session_state.assessor_result = None
         st.rerun()
 
@@ -770,13 +822,59 @@ def render_assessor_mode():
     for s in svc_base:
         by_dom.setdefault(s["domain"], []).append(s)
 
+    present = [d for d in DOMAIN_ORDER if by_dom.get(d)]
+    # Which domains are on screen. Hiding a domain does not exclude it from the
+    # calculation: every service keeps whatever level it has, shown or not.
+    shown = st.multiselect(
+        "Domains to display", options=present,
+        default=st.session_state.get("ws_domains", present),
+        format_func=lambda d: DOMAIN_LABELS.get(d, d), key="ws_domains",
+        help="A display filter only. Hidden services keep their current level "
+             "and are still part of the calculation.")
+    if not shown:
+        shown = present
+
+    # Streamlit drops the state of widgets it did not draw on a given run, so a
+    # domain the assessor hides would silently lose the levels they had set in
+    # it. Every rendered choice is mirrored here, and hidden domains are read
+    # back from this copy rather than from the widget keys.
+    saved = st.session_state.setdefault("ws_saved", {})
+
     selections = {}
     for dom in DOMAIN_ORDER:
         svcs = by_dom.get(dom, [])
         if not svcs:
             continue
         label = DOMAIN_LABELS.get(dom, dom)
+        if dom not in shown:
+            for s in svcs:
+                code = s["service"]
+                selections[code] = saved.get(
+                    code, (seed_applicable(s), seed_fl(s) if seed_applicable(s) else None))
+            continue
         with st.expander(f"{label}  ({len(svcs)} services)", expanded=False):
+            b1, b2 = st.columns([1, 1])
+            with b1:
+                if st.button("Mark whole domain as not applicable", key=f"na_{dom}",
+                             use_container_width=True):
+                    for s in svcs:
+                        st.session_state[f"ap_{s['service']}"] = False
+                        saved[s["service"]] = (False, None)
+                    st.session_state.assessor_result = None
+                    st.rerun()
+            with b2:
+                if st.button("Restore domain to evidence-derived", key=f"rs_{dom}",
+                             use_container_width=True):
+                    for s in svcs:
+                        st.session_state.pop(f"ap_{s['service']}", None)
+                        st.session_state.pop(f"fl_{s['service']}", None)
+                        saved.pop(s["service"], None)
+                    st.session_state.assessor_result = None
+                    st.rerun()
+            st.caption(
+                "Marking a domain as not applicable removes its services from both "
+                "the numerator and the denominator, which changes the SRI. Use it "
+                "only for systems the building does not have.")
             for s in svcs:
                 code = s["service"]
                 mx = int(s["level_max"])
@@ -809,11 +907,19 @@ def render_assessor_mode():
                         st.caption("Excluded from the assessment.")
 
                 if applicable and chosen is not None and chosen != derived:
+                    # The dropdown already carries the official wording of the
+                    # level, so repeating it here said nothing. What the assessor
+                    # cannot see anywhere else is what this one change is worth.
+                    delta = _level_impact(eng, svc_base, code, True, chosen)
+                    up = delta >= 0
                     st.markdown(
-                        f"<div style='background:#fff8e1;border-left:3px solid #f59f00;"
-                        f"padding:7px 12px;border-radius:4px;font-size:11.5px;color:#5a4000;"
-                        f"margin:4px 0 10px 0'><strong>L{chosen} requires</strong> &mdash; "
-                        f"{_level_text(code, chosen)}</div>", unsafe_allow_html=True)
+                        f"<div style='background:{'#e8f5e9' if up else '#fdecea'};"
+                        f"border-left:3px solid {'#2e7d32' if up else '#c62828'};"
+                        f"padding:7px 12px;border-radius:4px;font-size:11.5px;"
+                        f"color:{'#1b4d20' if up else '#8c1d18'};margin:4px 0 10px 0'>"
+                        f"Changed from L{derived} &middot; <strong>impact if applied: "
+                        f"{'+' if up else '&minus;'}{abs(delta):.2f} pp</strong></div>",
+                        unsafe_allow_html=True)
                     with st.expander("Details: what the engine measured", expanded=False):
                         st.caption(s.get("justification", "") or "No justification recorded.")
                         if s.get("data"):
@@ -821,13 +927,36 @@ def render_assessor_mode():
                 st.markdown("<hr style='margin:6px 0;border:none;border-top:1px solid #eef1f8'>",
                             unsafe_allow_html=True)
                 selections[code] = (applicable, chosen)
-
-    st.markdown("</div>", unsafe_allow_html=True)
+                saved[code] = (applicable, chosen)
 
     if st.button("CALCULATE (ASSESSOR)", use_container_width=True, key="calc_bottom") \
             or calc_clicked:
         _run_assessor(eng, svc_base, selections)
         st.rerun()
+
+
+def _level_impact(eng, svc_base, code, applicable, chosen) -> float:
+    """Points the SRI would move if this single change were applied on its own.
+
+    Services carry very different weights, so "raise this to L3" is not a
+    question the assessor can answer by eye. Scoring the change in isolation
+    turns the worksheet into something you can plan an intervention with.
+    """
+    trial = []
+    for s in svc_base:
+        if s["service"] != code:
+            trial.append(s)
+            continue
+        n = dict(s)
+        if not applicable:
+            n["applicability_status"] = "N/A_EXPLICIT_ABSENCE"
+            n["level_achieved"] = None
+        else:
+            n["applicability_status"] = "VERIFIED"
+            n["level_achieved"] = chosen
+        trial.append(n)
+    base = eng.calculate_sri_score(svc_base)["sri_score_pct"]
+    return eng.calculate_sri_score(trial)["sri_score_pct"] - base
 
 
 def _run_assessor(eng, svc_base, selections):
