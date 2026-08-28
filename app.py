@@ -26,6 +26,9 @@ CLASS_COLORS = {"A":"#1a9641","B":"#7bc143","C":"#c4d600","D":"#ffd700","E":"#e1
 CLASS_RANGES = [("G","0–20%",0),("F","20–35%",20),("E","35–50%",35),("D","50–65%",50),("C","65–75%",65),("B","75–90%",75),("A",">90%",90)]
 MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug",
           "Sep","Oct","Nov","Dec"]
+# The building's own timezone. Home Assistant logs in UTC, so every boundary
+# shown to the reader is converted back to local time before being labelled.
+LOCAL_TZ = "Europe/Rome"
 
 
 @st.cache_data(show_spinner=False)
@@ -68,12 +71,25 @@ def _data_bounds(fingerprint: str = ""):
 def _period_options():
     """Every calendar month the dataset touches, as year-month periods.
 
-    Month numbers alone break as soon as the data crosses a year boundary, which
-    this dataset does: it starts on 31 December 2025 and runs into August 2026.
-    Working in periods keeps the control correct in that case and for any future
-    refresh."""
+    Month numbers alone break as soon as the data crosses a year boundary, so
+    the control works in periods.
+
+    The bounds are converted to the building's local time first. Home Assistant
+    stamps its logs in UTC and Italy runs an hour or two ahead, so the first
+    records of the year read as 31 December although they were written at
+    midnight on 1 January. Taken raw, that put an extra month on the slider
+    holding fifty rows and no day of operation."""
     lo, hi = _data_bounds(_engine_fingerprint())
+    lo, hi = _to_local(lo), _to_local(hi)
     return list(pd.period_range(lo.to_period("M"), hi.to_period("M"), freq="M"))
+
+
+def _to_local(ts):
+    """A UTC timestamp seen in the building's own timezone."""
+    try:
+        return ts.tz_convert(LOCAL_TZ) if ts.tzinfo else ts
+    except (AttributeError, TypeError):
+        return ts
 
 
 def _fmt_period(p) -> str:
@@ -122,8 +138,12 @@ def run_sri(p_start, p_end, zone, btype):
     a calendar year is expressed correctly."""
     eng = _load_engine()
     all_csv = _load_all_csv(_engine_fingerprint())
-    t_start = pd.Timestamp(p_start.start_time, tz="UTC")
-    t_end = pd.Timestamp(p_end.end_time, tz="UTC")
+    # The months on the slider are calendar months in the building's own time,
+    # so their boundaries are anchored locally and only then expressed in UTC to
+    # match the logs. Anchoring them in UTC instead made "August" end two hours
+    # into September and "January" begin an hour into the previous December.
+    t_start = pd.Timestamp(p_start.start_time, tz=LOCAL_TZ).tz_convert("UTC")
+    t_end = pd.Timestamp(p_end.end_time, tz=LOCAL_TZ).tz_convert("UTC")
     filtered = {}
     for k, df in all_csv.items():
         if "last_changed" in df.columns:
@@ -313,6 +333,32 @@ if calc_clicked and not override_mode:
 # ══════════════════════════════════════════════════════════════════════════════
 #  DASHBOARD
 # ══════════════════════════════════════════════════════════════════════════════
+def _class_of(pct: float) -> str:
+    """The class a score falls in, using the same thresholds as the scale."""
+    out = "G"
+    for cls, _, lo in CLASS_RANGES:
+        if pct >= lo:
+            out = cls
+    return out
+
+
+def _period_label(t_start, t_end) -> str:
+    """The analysis window in words, in the building's own local time.
+
+    The logs are timestamped in UTC and Italy runs an hour or two ahead, so the
+    first records of the year carry a 31 December stamp although they were
+    written at midnight on 1 January. Labelling the period from the raw UTC
+    bounds put a month in the header that holds no data.
+    """
+    s, e = _to_local(t_start), _to_local(t_end)
+    months = (e.year - s.year) * 12 + e.month - s.month + 1
+    if s.year == e.year:
+        span = f"{s.strftime('%B')} &ndash; {e.strftime('%B %Y')}"
+    else:
+        span = f"{s.strftime('%B %Y')} &ndash; {e.strftime('%B %Y')}"
+    return f"{span} ({months} months)"
+
+
 def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
                      zone_used, btype_used, override_mode, n_changed=0):
     """Render the whole result view. Both modes share it, so the two assessments
@@ -336,9 +382,10 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
           Method C (Operational Assessment) &middot; EU Delegated Regulation 2020/2155 &middot; D3.1 Catalogue (54 services)
         </div>
         <div style="font-size:11px;color:#d0d8f0;margin-top:5px">
-          Period: {t_start.strftime("%b %Y")} &ndash; {t_end.strftime("%b %Y")} &middot;
+          {_period_label(t_start, t_end)} &middot;
           Zone: {zone_used} &middot; {btype_used} &middot;
-          Mode: {"Assessor-defined" if override_mode else "Evidence-derived (Method C)"}
+          {n_appl} applicable &middot; {54 - n_appl} not applicable &middot;
+          {"Assessor-defined" if override_mode else "Evidence-derived (Method C)"}
         </div>
       </div>
       <div style="background:{color};border-radius:10px;padding:12px 22px;text-align:center;min-width:130px">
@@ -407,10 +454,10 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
         </div>
         """, unsafe_allow_html=True)
 
-    # ── ROW 1: SRI Scale + Stats ──────────────────────────────────────────────
-    c1, c2 = st.columns([3, 2])
-
-    with c1:
+    # ── ROW 1: SRI Scale, full width ──────────────────────────────────────────
+    # The scale is the picture of the headline result, so it gets the whole
+    # width rather than sharing it with numbers that qualify it.
+    if True:
         # One markdown call per card. Streamlit closes any tag left open at the
         # end of a block, so opening the card here and closing it in a later
         # call left the heading alone in an empty box with its content outside.
@@ -437,65 +484,24 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
         unresolved_note = ""
         unresolved = result.get("unresolved_services", [])
         if unresolved:
-            unresolved_note = f'<div style="font-size:11px;color:#6c757d;margin-top:14px;font-style:italic">&#9650; Current result: Class {sri_cls}, {sri_pct:.2f}% (Method C). With UNRESOLVED services at upper bound: <strong>{sri_hi:.2f}%</strong>, still within Class {sri_cls}. Uncertainty reflects {", ".join(unresolved)}.</div>'
+            hi_cls = _class_of(sri_hi)
+            reach = (f"still within Class {sri_cls}" if hi_cls == sri_cls
+                     else f"which reaches Class {hi_cls}")
+            unresolved_note = (
+                '<div style="font-size:11px;color:#6c757d;margin-top:14px;font-style:italic">'
+                f'&#9650; Current result: Class {sri_cls}, {sri_pct:.2f}% (Method C). '
+                f'With unresolved services at their upper bound: <strong>{sri_hi:.2f}%</strong>, '
+                f'{reach}. Uncertainty reflects {", ".join(unresolved)}.</div>')
         st.markdown(scale_html + arrow_html + unresolved_note + "</div>", unsafe_allow_html=True)
 
-    with c2:
-        # The headline score and class are already the largest thing on the
-        # page. Repeating them here, once as "SRI Score" and again as "Lower
-        # bound" (the engine returns the same number for both), made three
-        # copies of one figure read as three different findings.
-        unresolved = result.get("unresolved_services", [])
-        n_na = 54 - n_appl
-        _cell = ('<div style="text-align:center;background:#f8fafc;border-radius:6px;'
-                 'padding:12px"><div style="font-size:24px;font-weight:800;'
-                 'color:#1c2541">{v}</div><div style="font-size:9px;'
-                 'text-transform:uppercase;color:#6c757d;letter-spacing:.06em">'
-                 '{l}</div></div>')
-        stats_html = f"""<div class="card"><h2>Summary</h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          {_cell.format(v=f"{n_appl}/54", l="Applicable services")}
-          {_cell.format(v=n_na, l="Not applicable")}
-          {_cell.format(v=f"{sri_hi:.2f}%", l="Upper bound")}
-          {_cell.format(v=len(unresolved), l="Unresolved")}
-        </div>
-        <div style="font-size:10.5px;color:#6c757d;margin-top:10px;line-height:1.5">
-          The upper bound scores every unresolved service at its maximum level.
-          The headline result scores them at L0.
-        </div></div>"""
-        st.markdown(stats_html, unsafe_allow_html=True)
-
-    # ── ROW 2: KF Cards ───────────────────────────────────────────────────────
-    kf_styles = {
-        "KF1": ("kf1","#1565c0","#e8f4fd","KF1","Energy Performance & Operation"),
-        "KF2": ("kf2","#6a1b9a","#f5eefb","KF2","Adaptation to Occupant Needs"),
-        "KF3": ("kf3","#bf360c","#fdf0eb","KF3","Response to Energy Grid"),
-    }
-    kf_cols = st.columns(3)
-    for i, (kfk, kfv) in enumerate(kf.items()):
-        _, color_kf, bg_kf, tag, name = kf_styles.get(kfk, ("","#333","#eee",kfk,""))
-        pct = kfv["SR"]
-        bar_w = min(pct, 100)
-        with kf_cols[i]:
-            st.markdown(f"""
-            <div style="background:{bg_kf};border:2px solid {color_kf};border-radius:8px;padding:16px;height:100%">
-              <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:{color_kf}">{tag}</div>
-              <div style="font-size:12px;font-weight:700;color:#1e293b;margin:4px 0 10px;line-height:1.3">{name}</div>
-              <div style="font-size:26px;font-weight:800;color:{color_kf};line-height:1">{pct:.2f}%</div>
-              <div style="height:7px;background:rgba(0,0,0,.1);border-radius:4px;margin:8px 0">
-                <div style="height:7px;background:{color_kf};border-radius:4px;width:{bar_w}%"></div>
-              </div>
-              <div style="font-size:10px;color:#64748b">{" &middot; ".join(kfv.get("ics",[]))}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
     # ── Building Data + Technical Systems ─────────────────────────────────────
-    bd1, bd2 = st.columns(2)
-    with bd1:
+    # Full width and stacked rather than side by side. Halving the width left
+    # each inner column at a quarter of the page, which is where "Segrate (MI),
+    # Italy" started breaking across lines. auto-fit collapses the pair to a
+    # single column when the window is genuinely narrow, instead of squeezing.
+    if True:
         st.markdown("""<div class="card"><h2>Building Data</h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 20px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:5px 28px">
           <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Building</span><span style="font-size:12.5px">Villa Segrate</span></div>
           <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Location</span><span style="font-size:12.5px">Segrate (MI), Italy</span></div>
           <div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Year Built</span><span style="font-size:12.5px">1993</span></div>
@@ -505,9 +511,8 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
           <div style="display:flex;gap:8px;padding:4px 0"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Floors</span><span style="font-size:12.5px">4 (3 above grade + 1 underground)</span></div>
           <div style="display:flex;gap:8px;padding:4px 0"><span style="font-size:10.5px;color:#6c757d;font-weight:600;text-transform:uppercase;min-width:100px">Climate Zone</span><span style="font-size:12.5px">South (IT)</span></div>
         </div></div>""", unsafe_allow_html=True)
-    with bd2:
         st.markdown("""<div class="card"><h2>Technical Systems</h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0 28px">
           <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>INNOVA eHPoca 3in1 (HP)</div>
           <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>IMMERGAS HERCULES SOLAR 25</div>
           <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>Tado TRVs (5 zones)</div>
@@ -519,39 +524,6 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
         </div></div>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-    # ── ROW 3: IC Table ───────────────────────────────────────────────────────
-    ic_html = """<div class="card"><h2>Impact Criteria Breakdown</h2>
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead><tr style="background:#f0f2f5">
-      <th style="padding:6px 10px;text-align:left;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Impact Criterion</th>
-      <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">SR (%)</th>
-      <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Weight</th>
-      <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Contribution</th>
-    </tr></thead><tbody>"""
-    total_contrib = 0
-    for icn, icv in ic.items():
-        sr = icv["SR"]; w = icv["weight"]; c = icv["contribution"]
-        total_contrib += c
-        bar_w = min(sr, 100)
-        ic_html += f"""<tr>
-          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;font-weight:600">{icn}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right">
-            <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
-              <div style="background:#e9ecef;border-radius:3px;height:6px;width:80px;position:relative;overflow:hidden">
-                <div style="position:absolute;top:0;left:0;height:100%;width:{bar_w}%;background:#1c6bb5;border-radius:3px"></div>
-              </div>
-              {sr:.2f}%
-            </div>
-          </td>
-          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;color:#6c757d">{w:.4f}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;font-weight:600;color:#1c2541">{c:.2f}</td>
-        </tr>"""
-    ic_html += f"""<tr style="background:#f8fafc;font-weight:700;border-top:2px solid #dee2e6">
-      <td colspan="3" style="padding:7px 10px;color:#1c2541">TOTAL SRI</td>
-      <td style="padding:7px 10px;text-align:right;font-size:14px;color:#1c2541">{total_contrib:.2f}%</td>
-    </tr></tbody></table></div>"""
-    st.markdown(ic_html, unsafe_allow_html=True)
 
     # ── Domain breakdown ──────────────────────────────────────────────────────
     # Ordered by the points each domain leaves on the table, so the first row is
@@ -593,6 +565,67 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
         dom_html += "</tbody></table></div>"
         st.markdown(dom_html, unsafe_allow_html=True)
 
+    # ── ROW 3: IC Table ───────────────────────────────────────────────────────
+    ic_html = """<div class="card"><h2>Impact Criteria Breakdown</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="background:#f0f2f5">
+      <th style="padding:6px 10px;text-align:left;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Impact Criterion</th>
+      <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">SR (%)</th>
+      <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Weight</th>
+      <th style="padding:6px 10px;text-align:right;font-size:10.5px;color:#495057;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #dee2e6">Contribution</th>
+    </tr></thead><tbody>"""
+    total_contrib = 0
+    for icn, icv in ic.items():
+        sr = icv["SR"]; w = icv["weight"]; c = icv["contribution"]
+        total_contrib += c
+        bar_w = min(sr, 100)
+        ic_html += f"""<tr>
+          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;font-weight:600">{icn}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right">
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
+              <div style="background:#e9ecef;border-radius:3px;height:6px;width:80px;position:relative;overflow:hidden">
+                <div style="position:absolute;top:0;left:0;height:100%;width:{bar_w}%;background:#1c6bb5;border-radius:3px"></div>
+              </div>
+              {sr:.2f}%
+            </div>
+          </td>
+          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;color:#6c757d">{w:.4f}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #e9ecef;text-align:right;font-weight:600;color:#1c2541">{c:.2f}</td>
+        </tr>"""
+    ic_html += f"""<tr style="background:#f8fafc;font-weight:700;border-top:2px solid #dee2e6">
+      <td colspan="3" style="padding:7px 10px;color:#1c2541">TOTAL SRI</td>
+      <td style="padding:7px 10px;text-align:right;font-size:14px;color:#1c2541">{total_contrib:.2f}%</td>
+    </tr></tbody></table></div>"""
+    st.markdown(ic_html, unsafe_allow_html=True)
+
+    # ── ROW 2: KF Cards ───────────────────────────────────────────────────────
+    kf_styles = {
+        "KF1": ("kf1","#1565c0","#e8f4fd","KF1","Energy Performance & Operation"),
+        "KF2": ("kf2","#6a1b9a","#f5eefb","KF2","Adaptation to Occupant Needs"),
+        "KF3": ("kf3","#bf360c","#fdf0eb","KF3","Response to Energy Grid"),
+    }
+    kf_cols = st.columns(3)
+    for i, (kfk, kfv) in enumerate(kf.items()):
+        _, color_kf, bg_kf, tag, name = kf_styles.get(kfk, ("","#333","#eee",kfk,""))
+        pct = kfv["SR"]
+        bar_w = min(pct, 100)
+        with kf_cols[i]:
+            st.markdown(f"""
+            <div style="background:{bg_kf};border:2px solid {color_kf};border-radius:8px;padding:16px;height:100%">
+              <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:{color_kf}">{tag}</div>
+              <div style="font-size:12px;font-weight:700;color:#1e293b;margin:4px 0 10px;line-height:1.3">{name}</div>
+              <div style="font-size:26px;font-weight:800;color:{color_kf};line-height:1">{pct:.2f}%</div>
+              <div style="height:7px;background:rgba(0,0,0,.1);border-radius:4px;margin:8px 0">
+                <div style="height:7px;background:{color_kf};border-radius:4px;width:{bar_w}%"></div>
+              </div>
+              <div style="font-size:10px;color:#64748b">{" &middot; ".join(kfv.get("ics",[]))}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+
+
     # ── ROW 4: Service Table ──────────────────────────────────────────────────
     _detail_title = ("Assessment detail (54 services)" if override_mode
                      else "Service Assessment Detail (54 services)")
@@ -613,19 +646,54 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
         4:    'background:#f1f8e9;color:#33691e;border-color:#c5e1a5',
     }
 
+    # ── Services summary and status legend ────────────────────────────────────
+    # Immediately above the table, because they explain what the reader is about
+    # to look at. The five counts sum to 54, so the row checks itself, and each
+    # status carries its definition instead of a separate legend section further
+    # up the page.
+    sc = result.get("status_counts", {})
+    n_ver = sc.get("VERIFIED", 0)
+    n_par = sc.get("PARTIAL_EVIDENCE", 0)
+    n_unr = sc.get("UNRESOLVED", 0)
+    n_na = sum(v for k, v in sc.items() if k in NA_SET)
+    STATES = [
+        ("54", "Total services", "#e3f2fd", "#0c447c", "The full D3.1 catalogue"),
+        (n_ver, "Verified", "#d4edda", "#155724", "Direct, sufficient evidence"),
+        (n_par, "Partial evidence", "#fff3cd", "#856404", "Indirect or incomplete evidence"),
+        (n_unr, "Unresolved", "#e8d5f5", "#4a1a7a", "Level cannot be determined, reported as a range"),
+        (n_na, "Not applicable", "#f1f3f5", "#495057", "The building does not have the service"),
+    ]
+    sum_html = ('<div class="card"><h2>Services Summary</h2>'
+                '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">')
+    for val, label, bg, fg, _ in STATES:
+        sum_html += (f'<div style="text-align:center;background:{bg};border-radius:8px;padding:13px 10px">'
+                     f'<div style="font-size:25px;font-weight:800;color:{fg};line-height:1.1">{val}</div>'
+                     f'<div style="font-size:9.5px;text-transform:uppercase;color:{fg};'
+                     f'letter-spacing:.05em;margin-top:3px">{label}</div></div>')
+    sum_html += ('</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));'
+                 'gap:10px;margin-top:8px">')
+    for _, _, _, fg, desc in STATES:
+        sum_html += (f'<div style="font-size:10px;color:#6c757d;line-height:1.5;padding:0 4px">{desc}</div>')
+    sum_html += "</div></div>"
+    st.markdown(sum_html, unsafe_allow_html=True)
+
     # No inner scroll box. All 54 rows flow with the page, so the table can be
     # printed, exported to PDF or captured in one screenshot, which a nested
     # scroll area makes impossible.
     tbl = f"""<div class="card"><h2>{_detail_title}</h2>
     <div style="border-radius:6px;border:1px solid #e2e6ea;overflow:hidden">
     <table style="width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed">
+    <colgroup>
+      <col style="width:6%"><col style="width:20%"><col style="width:9%">
+      <col style="width:5%"><col style="width:40%"><col style="width:20%">
+    </colgroup>
     <thead><tr style="background:#1c2541">
-      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:70px;position:sticky;top:0">Code</th>
-      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:190px;position:sticky;top:0">Service</th>
-      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:100px;position:sticky;top:0">Status</th>
-      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:52px;position:sticky;top:0">FL</th>
-      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0">__CRITCOL__</th>
-      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em;width:172px;position:sticky;top:0">Evidence</th>
+      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Code</th>
+      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Service</th>
+      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Status</th>
+      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em">FL</th>
+      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em">__CRITCOL__</th>
+      <th style="padding:8px 10px;text-align:left;color:white;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Evidence</th>
     </tr></thead><tbody>""".replace(
         "__CRITCOL__",
         "Official criterion for the level set" if override_mode else "Criterion for the level")
@@ -812,8 +880,8 @@ def render_assessor_mode():
 
     if st.button("Reset all to evidence-derived levels", key="reset_assessor"):
         for s in svc_base:
-            st.session_state.pop(f"fl_{s['service']}", None)
-            st.session_state.pop(f"ap_{s['service']}", None)
+            st.session_state[f"fl_{s['service']}"] = seed_fl(s)
+            st.session_state[f"ap_{s['service']}"] = seed_applicable(s)
         st.session_state.ws_saved = {}
         st.session_state.assessor_result = None
         st.rerun()
@@ -865,10 +933,14 @@ def render_assessor_mode():
             with b2:
                 if st.button("Restore domain to evidence-derived", key=f"rs_{dom}",
                              use_container_width=True):
+                    # Written back explicitly rather than popped. Removing a
+                    # widget key leaves Streamlit free to restore the value it
+                    # held before, which is why restoring a domain used to bring
+                    # the levels back but leave it marked not applicable.
                     for s in svcs:
-                        st.session_state.pop(f"ap_{s['service']}", None)
-                        st.session_state.pop(f"fl_{s['service']}", None)
-                        saved.pop(s["service"], None)
+                        st.session_state[f"ap_{s['service']}"] = seed_applicable(s)
+                        st.session_state[f"fl_{s['service']}"] = seed_fl(s)
+                        saved[s["service"]] = (seed_applicable(s), seed_fl(s))
                     st.session_state.assessor_result = None
                     st.rerun()
             st.caption(
