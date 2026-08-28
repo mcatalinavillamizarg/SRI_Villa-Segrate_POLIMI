@@ -2676,7 +2676,33 @@ def _ev_na(code: str) -> dict:
                    "No EV charger CSV. IFC: no EV charging equipment. Service not applicable.",
                    {"source": "DBL09 + DBL08"})
 
-def check_EV15(csv_files): return _ev_na("EV-15")
+def check_EV15(csv_files):
+    """
+    EV-15: EV charging capacity (max FL=4)
+
+    L0 is worded "not present", so the catalogue already accounts for a building
+    that has parking and no charging point: it scores zero rather than leaving
+    the assessment. The IFC confirms a garage, so the service applies and the
+    absence of any charger is the L0 condition itself, not a reason to exclude.
+
+    Reporting it as not applicable removed it from the denominator and therefore
+    raised the score. The official v4.5 sheet used for the Method B assessment
+    of this building marks EV-15 applicable at L0, and this now matches.
+    """
+    return _result("EV-15", VERIFIED, 0, 0.95,
+                   "IFC Architectural: a garage is documented, so the service applies. "
+                   "DBL09, DBL08 and the entity inventory contain no EV charging point, "
+                   "ducting or dedicated supply, which is the official L0 condition "
+                   "(\"not present\") rather than grounds for exclusion.",
+                   {"source": "IFC + DBL09 + DBL08", "previous_status": NA_EXPLICIT_ABSENCE,
+                    "corrected": "2026-08-29"})
+
+
+# EV-16 and EV-17 stay excluded, as in the Method B reference assessment. Their
+# levels describe how charging is balanced and reported, and with no charging
+# point there is nothing to balance or report. That the reference sheet counts
+# EV-15 and not these two is an inconsistency in it, noted rather than repaired
+# here so the two assessments remain comparable on the same applicability set.
 def check_EV16(csv_files): return _ev_na("EV-16")
 def check_EV17(csv_files): return _ev_na("EV-17")
 
