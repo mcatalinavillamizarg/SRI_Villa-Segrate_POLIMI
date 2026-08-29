@@ -244,13 +244,29 @@ div[data-testid="stButton"] button{background:#e16e28;color:white;border:none;bo
 div[data-testid="stButton"] button:hover{background:#c85e20}
 .card{background:white;border-radius:8px;border:1px solid #e2e6ea;padding:18px 22px;margin-bottom:16px}
 .card h2{font-size:11px;font-weight:700;color:#1c2541;margin-bottom:13px;padding-bottom:7px;border-bottom:1px solid #e2e6ea;text-transform:uppercase;letter-spacing:.06em}
-/* Cards sitting side by side in a column pair end at the same line. Without
-   this each card is only as tall as its own content, so a pair with unequal
-   text left one box hanging below the other. */
+/* Cards sitting side by side in a column pair end at the same line.
+
+   The first attempt at this set height:100% on the column and on the card, and
+   silently did nothing: Streamlit puts four more wrappers between the two
+   (stElementContainer, stMarkdown, an unnamed emotion div, stMarkdownContainer),
+   none of which had a height, and a percentage height against an auto-height
+   parent resolves to auto. Verified against the rendered page rather than
+   assumed this time.
+
+   So the stretch is carried down the whole chain with flex instead of height,
+   which needs no parent height to work. Every rule is scoped with :has(.card)
+   so the worksheet's own column pairs, which hold checkboxes and dropdowns and
+   must stay their natural size, are left alone. A browser without :has() simply
+   falls back to the ragged bottoms, which is the cosmetic issue this fixes. */
 [data-testid="stHorizontalBlock"]{align-items:stretch}
-[data-testid="stColumn"] > div,
-[data-testid="stColumn"] [data-testid="stVerticalBlock"]{height:100%}
-[data-testid="stColumn"] .card{height:100%;margin-bottom:0}
+[data-testid="stColumn"]:has(.card){display:flex;flex-direction:column}
+[data-testid="stColumn"]:has(.card) > [data-testid="stVerticalBlock"],
+[data-testid="stColumn"] [data-testid="stElementContainer"]:has(.card),
+[data-testid="stColumn"] [data-testid="stMarkdown"]:has(.card),
+[data-testid="stColumn"] [data-testid="stMarkdown"]:has(.card) > div,
+[data-testid="stColumn"] [data-testid="stMarkdownContainer"]:has(.card){
+  flex:1;display:flex;flex-direction:column}
+[data-testid="stColumn"] .card{flex:1;margin-bottom:0}
 </style>
 """, unsafe_allow_html=True)
 
@@ -630,11 +646,26 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
                    f'</span>&nbsp;&nbsp;')
     legend += "</div>"
 
-    chart = '<div style="display:flex;flex-direction:column;gap:7px">'
+    # The bars and the table list the same seven criteria in the same order, so
+    # they should read as one object across the two halves of the card. They did
+    # not: the bars were packed at a 29px pitch while the table rows sat at 39px,
+    # which left the bars finished and a block of white space under them by the
+    # time the table reached its total. Both sides are now pinned to the same row
+    # height, and the bars are pushed down by the height of the table header so
+    # row one lines up with row one.
+    IC_ROW_H = 39   # px, one criterion, on both sides
+    IC_HDR_H = 32   # px, the table header, matched by a spacer above the bars
+
+    # The spacer is the header height alone, not header plus its 2px bottom
+    # border: measured against the rendered page, that lands every row within
+    # half a pixel, while adding the border overshot by 1.6px on all seven.
+    chart = ('<div style="display:flex;flex-direction:column">'
+             f'<div style="height:{IC_HDR_H}px" aria-hidden="true"></div>')
     for k, v in ic_rows:
         name, kfk, _ = IC_META[k]
         sr = v["SR"]
-        chart += (f'<div style="display:flex;align-items:center;gap:8px">'
+        chart += (f'<div style="display:flex;align-items:center;gap:8px;'
+                  f'height:{IC_ROW_H}px;box-sizing:border-box">'
                   f'<div style="flex:0 0 132px;font-size:10px;color:#495057;text-align:right;'
                   f'line-height:1.25">{name}</div>'
                   f'<div style="flex:1;background:#eef0f4;border-radius:3px;height:14px;overflow:hidden">'
@@ -643,9 +674,11 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
                   f'<div style="flex:0 0 42px;font-size:10px;color:#495057">{sr:.1f}%</div></div>')
     chart += "</div>"
 
-    th = ('padding:6px 8px;font-size:10px;color:#495057;text-transform:uppercase;'
+    th = (f'padding:6px 8px;height:{IC_HDR_H}px;box-sizing:border-box;font-size:10px;'
+          'color:#495057;text-transform:uppercase;'
           'letter-spacing:.04em;border-bottom:2px solid #dee2e6')
-    td = "padding:6px 8px;border-bottom:1px solid #e9ecef"
+    td = (f"padding:6px 8px;height:{IC_ROW_H}px;box-sizing:border-box;"
+          "border-bottom:1px solid #e9ecef")
     table = (f'<table style="width:100%;border-collapse:collapse;font-size:11.5px">'
              f'<thead><tr style="background:#f0f2f5">'
              f'<th style="{th};text-align:left">Impact Criterion</th>'
@@ -671,7 +704,7 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
               f'<td style="padding:7px 8px;text-align:right;font-weight:700;font-size:13px;'
               f'color:#1c2541">{total_contrib:.2f}%</td></tr></tbody></table>')
 
-    st.markdown('<div class="card"><h2>Impact Criteria (IC) Breakdown</h2>'
+    st.markdown('<div class="card"><h2>Impact Criteria Breakdown</h2>'
                 + legend
                 + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'
                   'gap:20px;align-items:start"><div>' + chart + '</div><div>' + table
@@ -714,8 +747,10 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
 
 
     # ── ROW 4: Service Table ──────────────────────────────────────────────────
-    _detail_title = ("Assessment detail (54 services)" if override_mode
-                     else "Service Assessment Detail (54 services)")
+    # The count was already stated in the Services Summary directly above, and
+    # the table itself shows it. Repeating it in the heading said it a third time.
+    _detail_title = ("Assessment detail" if override_mode
+                     else "Service Assessment Detail")
 
     STATUS_BADGE = {
         "VERIFIED":             ('<span style="background:#d4edda;color:#155724;border:1px solid #c3e6cb;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">Verified</span>', True),
@@ -830,7 +865,7 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
             fl_label = f"L{fl}" if fl is not None else "N/A"
             # The official wording of the level, identical in both modes: the
             # criterion does not depend on who chose the level.
-            just = s.get("official_criterion", "") or "&mdash;"
+            just = _sentence(s.get("official_criterion", "")) or "&mdash;"
             # Where the level came from. An assessor-set level has no evidence
             # behind it, and saying so is the honest cell.
             if s.get("assessor_changed") or s.get("overridden"):
@@ -922,13 +957,28 @@ def _official_catalog(fingerprint: str = ""):
         return {}
 
 
+def _sentence(text: str) -> str:
+    """Capitalise the first letter of an official criterion, for display only.
+
+    The catalogue is transcribed verbatim from the SRI calculation sheet, and
+    the sheet is inconsistent: 52 of the 54 services start their level texts
+    with a capital, while E-12 and EV-15 do not. Fixing that in the catalogue
+    would mean the transcription no longer matches the source, which is the one
+    property that makes it checkable. So the data stays as published and only
+    the rendering is normalised. Nothing but the first character is touched, so
+    wording such as "real-time" is left alone.
+    """
+    t = (text or "").strip()
+    return t[:1].upper() + t[1:] if t else t
+
+
 def _level_options(code: str, max_fl: int):
     """(value, label) for every level of a service, labelled with its official text."""
     cat = _official_catalog(_engine_fingerprint()).get(code, {})
     levels = cat.get("levels", {})
     out = []
     for lv in range(0, int(max_fl) + 1):
-        desc = levels.get(str(lv), {}).get("description", "")
+        desc = _sentence(levels.get(str(lv), {}).get("description", ""))
         out.append((lv, f"L{lv} — {desc}" if desc else f"L{lv}"))
     return out
 
@@ -937,7 +987,7 @@ def _level_text(code: str, lv) -> str:
     if lv is None:
         return ""
     cat = _official_catalog(_engine_fingerprint()).get(code, {})
-    return cat.get("levels", {}).get(str(int(lv)), {}).get("description", "")
+    return _sentence(cat.get("levels", {}).get(str(int(lv)), {}).get("description", ""))
 
 
 DOMAIN_ORDER = ["Heating", "DHW", "Cooling", "Ventilation", "Lighting",
@@ -1258,7 +1308,7 @@ def _render_changes_summary(eng, svc_list, svc_base, result_base):
                  f"<td style='padding:7px 8px;text-align:right;font-weight:700;color:{col};"
                  f"white-space:nowrap'>{delta:+.2f} pp</td>"
                  f"<td style='padding:7px 8px;font-size:11px;color:#495057'>"
-                 f"{s.get('official_criterion','')}</td></tr>")
+                 f"{_sentence(s.get('official_criterion',''))}</td></tr>")
     st.markdown(f"""
     <div class="card"><h2>Changes against the evidence-derived assessment</h2>
     <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
