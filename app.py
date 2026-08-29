@@ -7,6 +7,7 @@ import os, sys, re, types, json, calendar
 from pathlib import Path
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 # ── PATHS ─────────────────────────────────────────────────────────────────────
 _HERE = Path(__file__).parent
@@ -968,6 +969,48 @@ DOMAIN_LABELS = {"Dynamic_Envelope": "Dynamic Envelope", "EV_Charging": "EV Char
                  "Monitoring_Control": "Monitoring & Control"}
 
 
+def _scroll_to_top():
+    """Bring the page back to the banner after a calculation.
+
+    Streamlit keeps the scroll position across a rerun, so pressing Calculate at
+    the foot of a 54-service worksheet recomputes the score and leaves you
+    looking at the worksheet, with the new number off screen above. There is no
+    official API for this, so the scroll is nudged from a zero-height component,
+    which runs in an iframe and reaches the app through window.parent.
+
+    Written to fail quietly. The container that actually scrolls has been
+    renamed more than once across Streamlit versions, so several selectors are
+    tried and the window itself is the fallback; if a future version renames it
+    again, or a browser blocks access to the parent frame, the page simply does
+    not jump. The calculation is unaffected either way.
+    """
+    components.html(
+        """
+        <script>
+        (function () {
+          var d;
+          try { d = window.parent.document; } catch (e) { return; }
+          var sels = ['[data-testid="stMain"]', 'section.main',
+                      '[data-testid="stAppViewContainer"]', '.main'];
+          function go() {
+            for (var i = 0; i < sels.length; i++) {
+              var el = d.querySelector(sels[i]);
+              if (el && el.scrollHeight > el.clientHeight + 4) {
+                el.scrollTo({top: 0, behavior: 'smooth'});
+                return;
+              }
+            }
+            try { window.parent.scrollTo({top: 0, behavior: 'smooth'}); } catch (e) {}
+          }
+          // The rerun may still be painting, so retry as the page settles.
+          go(); setTimeout(go, 150); setTimeout(go, 450);
+        })();
+        </script>
+        """,
+        height=0,
+    )
+
+
 def render_assessor_mode():
     eng = _load_engine()
     result_base, svc_base, t_start, t_end = _baseline()
@@ -980,6 +1023,11 @@ def render_assessor_mode():
         render_dashboard(_res, _svc, result_base, svc_base, t_start, t_end,
                          zone, btype, True, n_changed=_n)
         _render_changes_summary(eng, _svc, svc_base, result_base)
+        # Only on the run that follows a calculation. Firing it on every rerun
+        # would yank the page upward each time a level is changed in the
+        # worksheet, which is the opposite of useful.
+        if st.session_state.pop("scroll_after_calc", False):
+            _scroll_to_top()
     else:
         st.markdown(f"""
         <div style="background:#1c2541;color:white;padding:20px 28px;border-radius:8px;margin-bottom:16px">
@@ -1014,7 +1062,6 @@ def render_assessor_mode():
         for s in svc_base:
             st.session_state[f"fl_{s['service']}"] = seed_fl(s)
             st.session_state[f"ap_{s['service']}"] = seed_applicable(s)
-        st.session_state.ws_saved = {}
         st.session_state.assessor_result = None
         st.rerun()
 
@@ -1022,36 +1069,24 @@ def render_assessor_mode():
     for s in svc_base:
         by_dom.setdefault(s["domain"], []).append(s)
 
-    present = [d for d in DOMAIN_ORDER if by_dom.get(d)]
-    # Which domains are on screen. Hiding a domain does not exclude it from the
-    # calculation: every service keeps whatever level it has, shown or not.
-    shown = st.multiselect(
-        "Domains to display", options=present,
-        default=st.session_state.get("ws_domains", present),
-        format_func=lambda d: DOMAIN_LABELS.get(d, d), key="ws_domains",
-        help="A display filter only. Hidden services keep their current level "
-             "and are still part of the calculation.")
-    if not shown:
-        shown = present
-
-    # Streamlit drops the state of widgets it did not draw on a given run, so a
-    # domain the assessor hides would silently lose the levels they had set in
-    # it. Every rendered choice is mirrored here, and hidden domains are read
-    # back from this copy rather than from the widget keys.
-    saved = st.session_state.setdefault("ws_saved", {})
-
+    # Every domain is always drawn. There used to be a multiselect that hid
+    # domains from the worksheet, but its chips carried an "x" that reads as
+    # delete, and a control that appears to remove a domain from a scoring
+    # worksheet is worth less than the screen space it saves. Drawing all nine
+    # also removes the reason for the mirror that used to sit here: Streamlit
+    # discards the state of widgets it did not draw, so hidden domains needed
+    # their levels kept in a parallel dict. Nothing is hidden now, so the widget
+    # keys are the only copy and cannot drift from what is on screen.
+    #
+    # The per-domain "not applicable" buttons stay. Those genuinely exclude a
+    # domain from the SRI, which is a real assessment decision rather than a
+    # view setting.
     selections = {}
     for dom in DOMAIN_ORDER:
         svcs = by_dom.get(dom, [])
         if not svcs:
             continue
         label = DOMAIN_LABELS.get(dom, dom)
-        if dom not in shown:
-            for s in svcs:
-                code = s["service"]
-                selections[code] = saved.get(
-                    code, (seed_applicable(s), seed_fl(s) if seed_applicable(s) else None))
-            continue
         with st.expander(f"{label}  ({len(svcs)} services)", expanded=False):
             b1, b2 = st.columns([1, 1])
             with b1:
@@ -1059,7 +1094,6 @@ def render_assessor_mode():
                              use_container_width=True):
                     for s in svcs:
                         st.session_state[f"ap_{s['service']}"] = False
-                        saved[s["service"]] = (False, None)
                     st.session_state.assessor_result = None
                     st.rerun()
             with b2:
@@ -1072,7 +1106,6 @@ def render_assessor_mode():
                     for s in svcs:
                         st.session_state[f"ap_{s['service']}"] = seed_applicable(s)
                         st.session_state[f"fl_{s['service']}"] = seed_fl(s)
-                        saved[s["service"]] = (seed_applicable(s), seed_fl(s))
                     st.session_state.assessor_result = None
                     st.rerun()
             st.caption(
@@ -1131,7 +1164,6 @@ def render_assessor_mode():
                 st.markdown("<hr style='margin:6px 0;border:none;border-top:1px solid #eef1f8'>",
                             unsafe_allow_html=True)
                 selections[code] = (applicable, chosen)
-                saved[code] = (applicable, chosen)
 
     if st.button("CALCULATE (ASSESSOR)", use_container_width=True, key="calc_bottom") \
             or calc_clicked:
@@ -1190,6 +1222,9 @@ def _run_assessor(eng, svc_base, selections):
         out.append(n)
     res = score_only(out, zone, btype)
     st.session_state.assessor_result = (_settings, (res, out, n_changed))
+    # Both Calculate buttons, the one under the worksheet and the one in the
+    # sidebar, come through here, so the flag is set once for both.
+    st.session_state.scroll_after_calc = True
 
 
 def _render_changes_summary(eng, svc_list, svc_base, result_base):

@@ -1584,6 +1584,19 @@ def _hourly(series_df, col="state"):
     return d.set_index("last_changed")["_v"].sort_index().resample("1h").mean()
 
 
+def _local_hour(ts):
+    """Hour of day at the building, from a UTC log timestamp.
+
+    Only use this where the hour is compared against a fixed window such as
+    "night". Tests that group by hour, or that correlate two series, must not
+    call it: they are already invariant, and converting would only add a way to
+    get it wrong. Handles the summer/winter change, so an opening at 23:30 local
+    counts as night in both June and January.
+    """
+    ts = pd.to_datetime(ts, utc=True)
+    return ts.dt.tz_convert(BUILDING_TZ).dt.hour
+
+
 def check_V1a(csv_files: dict) -> dict:
     """
     V-1a: Supply air flow control at the room level (max FL=4)
@@ -1876,9 +1889,21 @@ def check_V2d(csv_files: dict) -> dict:
                     "setpoint_entities": len(setpoint_entities)})
 
 
-V3_NIGHT_HOURS = range(22, 24)          # plus 0-6, applied below
 V3_NIGHT_HOURS = list(range(22, 24)) + list(range(0, 7))
 V3_MAX_NIGHT_SHARE = 0.60               # above this, free cooling is night cooling only
+
+# Home Assistant timestamps are UTC; the building runs on Italian civil time,
+# which is UTC+1 in winter and UTC+2 in summer. Every other clock-dependent test
+# in this file survives a constant offset, because grouping by hour of day only
+# relabels the same groups and correlating two series leaves both in the same
+# base. This one does not: it compares the hour against a fixed night window, so
+# reading it in UTC slides that window one or two hours off the real night. On
+# the current data the difference is large, 39.7% of bypass openings counted as
+# nocturnal in UTC against 55.8% in local time, and the second figure is the one
+# that matches the physical profile: openings peak at 22h-02h and nearly stop
+# between 05h and 08h. The level comes out L2 either way, but only the local
+# reading reports a true number.
+BUILDING_TZ = "Europe/Rome"
 V3_MIN_ENTHALPY_CORRELATION = 0.50      # humidity must actually drive the bypass
 V3_HUMIDITY_PARITY = 0.80               # and do so comparably to temperature
 
@@ -1924,7 +1949,7 @@ def check_V3(csv_files: dict) -> dict:
     op = d[d["_open"]]
     night_share = 0.0
     if len(op):
-        night = op["last_changed"].dt.hour.isin(V3_NIGHT_HOURS)
+        night = _local_hour(op["last_changed"]).isin(V3_NIGHT_HOURS)
         night_share = float(night.mean())
     all_periods = len(op) > 0 and night_share <= V3_MAX_NIGHT_SHARE
 
@@ -1961,8 +1986,8 @@ def check_V3(csv_files: dict) -> dict:
                 f"(r={temp_r:.2f}): enthalpy-directed control. L3.")
     elif all_periods:
         level, status, conf = 2, VERIFIED, 0.74
-        note = (f"Bypass open in {open_pct:.0f}% of states, of which only "
-                f"{night_share*100:.0f}% fall in night hours, so free cooling is modulated "
+        note = (f"Bypass open in {open_pct:.0f}% of states, of which "
+                f"{night_share*100:.0f}% fall in night hours local time, so free cooling is modulated "
                 f"across all periods rather than limited to night cooling. L2. "
                 f"L3 requires enthalpy-directed control: humidity correlates at r={hum_r:.2f} "
                 f"against temperature at r={temp_r:.2f}, below the "
@@ -1970,8 +1995,8 @@ def check_V3(csv_files: dict) -> dict:
                 f"so the control is temperature-driven only.")
     else:
         level, status, conf = 1, VERIFIED, 0.70
-        note = (f"Bypass openings concentrate at night ({night_share*100:.0f}% of openings): "
-                f"night cooling. L1.")
+        note = (f"Bypass openings concentrate at night local time "
+                f"({night_share*100:.0f}% of openings): night cooling. L1.")
 
     status, gate_note = _gate(status, n_records=cov["n_records"])
     return _result("V-3", status, level, conf,
