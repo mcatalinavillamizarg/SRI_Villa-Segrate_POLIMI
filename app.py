@@ -243,6 +243,13 @@ div[data-testid="stButton"] button{background:#e16e28;color:white;border:none;bo
 div[data-testid="stButton"] button:hover{background:#c85e20}
 .card{background:white;border-radius:8px;border:1px solid #e2e6ea;padding:18px 22px;margin-bottom:16px}
 .card h2{font-size:11px;font-weight:700;color:#1c2541;margin-bottom:13px;padding-bottom:7px;border-bottom:1px solid #e2e6ea;text-transform:uppercase;letter-spacing:.06em}
+/* Cards sitting side by side in a column pair end at the same line. Without
+   this each card is only as tall as its own content, so a pair with unequal
+   text left one box hanging below the other. */
+[data-testid="stHorizontalBlock"]{align-items:stretch}
+[data-testid="stColumn"] > div,
+[data-testid="stColumn"] [data-testid="stVerticalBlock"]{height:100%}
+[data-testid="stColumn"] .card{height:100%;margin-bottom:0}
 </style>
 """, unsafe_allow_html=True)
 
@@ -388,9 +395,13 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
           {"Assessor-defined" if override_mode else "Evidence-derived (Method C)"}
         </div>
       </div>
-      <div style="background:{color};border-radius:10px;padding:12px 22px;text-align:center;min-width:130px">
+      <div style="background:{color};border-radius:10px;padding:12px 22px;text-align:center;
+                  min-width:130px;flex:0 0 auto">
         <div style="font-size:10px;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.08em">SRI Score</div>
-        <div style="font-size:36px;font-weight:800;color:white;line-height:1">{sri_pct:.2f}%</div>
+        <!-- nowrap: on a narrow window the headline was breaking mid-number and
+             rendering as "32.7" over "1%", which reads as two figures. -->
+        <div style="font-size:36px;font-weight:800;color:white;line-height:1;
+                    white-space:nowrap">{sri_pct:.2f}%</div>
         <div style="font-size:14px;color:rgba(255,255,255,.85)">Class {sri_cls}</div>
       </div>
     </div>
@@ -727,17 +738,40 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
     # status carries its definition instead of a separate legend section further
     # up the page.
     sc = result.get("status_counts", {})
-    n_ver = sc.get("VERIFIED", 0)
-    n_par = sc.get("PARTIAL_EVIDENCE", 0)
-    n_unr = sc.get("UNRESOLVED", 0)
-    n_na = sum(v for k, v in sc.items() if k in NA_SET)
-    STATES = [
-        ("54", "Total services", "#e3f2fd", "#0c447c", "The full D3.1 catalogue"),
-        (n_ver, "Verified", "#d4edda", "#155724", "Direct, sufficient evidence"),
-        (n_par, "Partial evidence", "#fff3cd", "#856404", "Indirect or incomplete evidence"),
-        (n_unr, "Unresolved", "#e8d5f5", "#4a1a7a", "Level cannot be determined, reported as a range"),
-        (n_na, "Not applicable", "#f1f3f5", "#495057", "The building does not have the service"),
-    ]
+    if override_mode:
+        # In this mode the evidence statuses no longer describe what is on
+        # screen: every level the assessor sets is recorded as verified. What
+        # matters here is which levels came from the assessor and which were
+        # left as the engine derived them. Purple is kept for assessor-set,
+        # matching the Modified badge in the table below, so the colour means
+        # one thing throughout the mode. The same wording is used in the tile,
+        # the badge and the evidence cell: three names for one state read as
+        # three different states.
+        n_set = sum(1 for s in svc_list if s.get("assessor_changed"))
+        n_na = sum(1 for s in svc_list
+                   if s["applicability_status"] in NA_SET and not s.get("assessor_changed"))
+        n_kept = len(svc_list) - n_set - n_na
+        STATES = [
+            ("54", "Total services", "#e3f2fd", "#0c447c", "The full D3.1 catalogue"),
+            (n_set, "Modified", "#e8d5f5", "#4a1a7a",
+             "Level chosen manually, replacing the derived one"),
+            (n_kept, "Derived", "#d4edda", "#155724",
+             "Left at the level the Method C engine derived"),
+            (n_na, "Not applicable", "#f1f3f5", "#495057",
+             "The building does not have the service"),
+        ]
+    else:
+        n_ver = sc.get("VERIFIED", 0)
+        n_par = sc.get("PARTIAL_EVIDENCE", 0)
+        n_unr = sc.get("UNRESOLVED", 0)
+        n_na = sum(v for k, v in sc.items() if k in NA_SET)
+        STATES = [
+            ("54", "Total services", "#e3f2fd", "#0c447c", "The full D3.1 catalogue"),
+            (n_ver, "Verified", "#d4edda", "#155724", "Direct, sufficient evidence"),
+            (n_par, "Partial evidence", "#fff3cd", "#856404", "Indirect or incomplete evidence"),
+            (n_unr, "Unresolved", "#e8d5f5", "#4a1a7a", "Level cannot be determined, reported as a range"),
+            (n_na, "Not applicable", "#f1f3f5", "#495057", "The building does not have the service"),
+        ]
     sum_html = ('<div class="card"><h2>Services Summary</h2>'
                 '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">')
     for val, label, bg, fg, _ in STATES:
@@ -799,13 +833,13 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
             # Where the level came from. An assessor-set level has no evidence
             # behind it, and saying so is the honest cell.
             if s.get("assessor_changed") or s.get("overridden"):
-                evidence = "Set by assessor"
+                evidence = "Modified"
             else:
                 evidence = s.get("evidence") or "&mdash;"
             if s.get("assessor_changed") or s.get("overridden"):
                 row_style = "border-bottom:1px solid #e9ecef;background:#faf5ff;box-shadow:inset 3px 0 0 #6a1b9a"
                 badge_html = ('<span style="background:#e8d5f5;color:#4a1a7a;border:1px solid #d6aef0;'
-                              'padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">Override</span>')
+                              'padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">Modified</span>')
             else:
                 row_style = "border-bottom:1px solid #e9ecef"
             tbl += f"""<tr style="{row_style}">
