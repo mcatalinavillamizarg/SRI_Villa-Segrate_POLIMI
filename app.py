@@ -523,11 +523,9 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
         st.markdown(scale_html + arrow_html + unresolved_note + "</div>", unsafe_allow_html=True)
 
     # ── Building Data + Technical Systems ─────────────────────────────────────
-    # Two cards side by side, each holding two inner columns. What used to break
-    # the layout was not the split but the labels: a 100px minimum on every label
-    # left the value with too little room and pushed it onto a second line. The
-    # labels are narrower now and the inner columns collapse to one on a narrow
-    # window rather than squeezing.
+    # Two cards side by side, each holding two inner columns. Label widths are
+    # kept tight so the value keeps enough room to stay on one line, and the
+    # inner columns collapse to one on a narrow window rather than squeezing.
     bd1, bd2 = st.columns(2)
     with bd1:
         st.markdown("""<div class="card"><h2>Building Data</h2>
@@ -549,7 +547,7 @@ def render_dashboard(result, svc_list, result_base, svc_base, t_start, t_end,
           <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>Tado TRVs (5 zones)</div>
           <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>Solar thermal CP4 XL</div>
           <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>PV 2.4 kWp + Battery + BMS</div>
-          <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>ComfoAir Q450 MVHR</div>
+          <div style="font-size:11.5px;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>ComfoAir Q350 MVHR</div>
           <div style="font-size:11.5px;padding:5px 0;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>AC splits x5 (ESPHome/MTS200B)</div>
           <div style="font-size:11.5px;padding:5px 0;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>Shelly Pro 3EM (sub-metering)</div>
         </div></div>""", unsafe_allow_html=True)
@@ -1119,14 +1117,12 @@ def render_assessor_mode():
     for s in svc_base:
         by_dom.setdefault(s["domain"], []).append(s)
 
-    # Every domain is always drawn. There used to be a multiselect that hid
-    # domains from the worksheet, but its chips carried an "x" that reads as
-    # delete, and a control that appears to remove a domain from a scoring
-    # worksheet is worth less than the screen space it saves. Drawing all nine
-    # also removes the reason for the mirror that used to sit here: Streamlit
-    # discards the state of widgets it did not draw, so hidden domains needed
-    # their levels kept in a parallel dict. Nothing is hidden now, so the widget
-    # keys are the only copy and cannot drift from what is on screen.
+    # Every domain is always drawn. A filter that hides domains is not worth the
+    # screen space it saves here: its chips carry an "x" that reads as delete on
+    # a scoring worksheet. Drawing all nine also keeps the widget keys as the
+    # only copy of the assessor's choices. Streamlit discards the state of
+    # widgets it did not draw, so anything hidden would need a parallel dict
+    # that can drift from what is on screen.
     #
     # The per-domain "not applicable" buttons stay. Those genuinely exclude a
     # domain from the SRI, which is a real assessment decision rather than a
@@ -1151,8 +1147,8 @@ def render_assessor_mode():
                              use_container_width=True):
                     # Written back explicitly rather than popped. Removing a
                     # widget key leaves Streamlit free to restore the value it
-                    # held before, which is why restoring a domain used to bring
-                    # the levels back but leave it marked not applicable.
+                    # held before, which would bring the levels back while
+                    # leaving the domain marked not applicable.
                     for s in svcs:
                         st.session_state[f"ap_{s['service']}"] = seed_applicable(s)
                         st.session_state[f"fl_{s['service']}"] = seed_fl(s)

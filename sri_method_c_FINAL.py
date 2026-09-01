@@ -206,6 +206,25 @@ def detect_csv_period(csv_dir: str) -> tuple:
             continue
     return lo, hi
 
+# Home Assistant entity ids are chosen by whoever set the system up, so some of
+# them carry the household name. The building is referred to as Villa Segrate in
+# every output of this work, and an entity id is an output as soon as it reaches
+# an export, a log line or a repository. Normalising on load means a fresh export
+# from Home Assistant can be dropped in without anyone having to remember to
+# scrub it first: the substitution happens once, here, where it is visible.
+# Only the identifier is rewritten. No measurement is touched.
+ENTITY_ID_ALIASES = {
+    "casa_carraro": "villa",
+}
+
+
+def _anonymise_entity_id(entity_id: str) -> str:
+    """Replace household identifiers in an entity id with a neutral one."""
+    for private, public in ENTITY_ID_ALIASES.items():
+        entity_id = entity_id.replace(private, public)
+    return entity_id
+
+
 def load_csv_files(csv_dir: str) -> dict:
     """
     Load all CSVs from the 200dd area-based folder.
@@ -248,13 +267,15 @@ def load_csv_files(csv_dir: str) -> dict:
 
             if "entity_id" in df.columns:
                 # New area-based format: split by entity_id
+                df["entity_id"] = df["entity_id"].astype(str).map(_anonymise_entity_id)
                 for eid, grp in df.groupby("entity_id"):
                     grp = grp.reset_index(drop=True)
                     if len(grp) > 0:
                         files[eid] = grp
             else:
                 # Old single-entity format: key by filename stem
-                key = fname.replace("_history.csv", "").replace(".csv", "")
+                key = _anonymise_entity_id(
+                    fname.replace("_history.csv", "").replace(".csv", ""))
                 if len(df) > 0:
                     files[key] = df
 
@@ -558,6 +579,30 @@ def _from_manual(code: str) -> dict:
 # ════════════════════════════════════════════════════════════════════════════════
 
 H1A_MIN_ROOM_CONTROLLERS = 2   # more than one addressable zone -> individual room control
+H1A_MIN_ROOM_RECORDS = 30      # below this a room is instrumented, not operating
+
+
+def _room_key(entity_id: str) -> str:
+    """Canonical name of the room an entity belongs to.
+
+    The same physical room is reached through two vendors that name it
+    differently: Tado yields "Cucina" and Meross "cucina", which are distinct
+    strings and would survive a set union as two rooms. Everything is folded to
+    one lowercase key with the vendor suffixes and the Home Assistant duplicate
+    marker removed, so a room counts once however many controllers serve it.
+    """
+    name = entity_id.split(".")[-1]
+    name = re.sub(r"_\d+$", "", name)                 # HA appends _2 to duplicates
+    for suffix in ("_mts200b_main_channel", "_riscaldamento", "_temperatura"):
+        name = name.replace(suffix, "")
+    # Some integrations put the quantity before the room instead of after, so
+    # the prefix has to come off too or the same room yields two different keys
+    # in two different services.
+    for prefix in ("meross_temperature_", "meross_"):
+        if name.startswith(prefix):
+            name = name[len(prefix):]
+            break
+    return name.strip("_").lower()
 
 # A capability counts as OPERATIONAL only if it is observed across a meaningful
 # share of the analysis period, rather than in a single window. Expressed as a
@@ -623,36 +668,36 @@ def check_H1a(csv_files: dict) -> dict:
       L3 Individual room control with communication between controllers and to BACS
       L4 Individual room control with communication and occupancy detection
 
-    The previous paraphrase read L3 as "individual room scheduling" and L4 as
-    "demand based", which is not what the catalogue says. Scheduling belongs to
-    H-4 and MC-3; here the ladder is about how many rooms are individually
-    controlled, whether those controllers are networked, and whether occupancy
-    feeds into them.
+    The ladder is about how many rooms are individually controlled, whether
+    those controllers are networked, and whether occupancy feeds into them.
+    Scheduling is not part of it: that belongs to H-4 and MC-3.
     """
     tado_keys = [k for k in csv_files if k.endswith("_riscaldamento")]
     if not tado_keys:
         return _result("H-1a", NA_NOT_EVIDENCED, 0, 0.0,
                        "No Tado heating CSV found. No operational evidence of emission control.")
 
-    rooms_with_data, total_records = [], 0
+    # A room counts as individually controlled when its controller actually
+    # produced a series. Three of the eight Tado zones hold a single row, which
+    # says the entity exists rather than that the room is being controlled, so a
+    # record floor separates an instrumented room from an operating one.
+    rooms_with_data, total_records = set(), 0
     for k in tado_keys:
         df = csv_files[k]
         try:
             vals = pd.to_numeric(df["state"], errors="coerce").dropna()
-            if len(vals) > 0:
-                room = k.replace("sensor.", "").replace("_riscaldamento", "").replace("_", " ").title()
-                rooms_with_data.append(room)
-                total_records += len(vals)
         except Exception:
-            pass
+            continue
+        if len(vals) >= H1A_MIN_ROOM_RECORDS:
+            rooms_with_data.add(_room_key(k))
+            total_records += len(vals)
 
     n_rooms = len(rooms_with_data)
 
     # Meross MTS200B thermostats are room controllers too; counting only Tado
     # under-reports the number of individually controlled rooms.
-    meross_rooms = {re.sub(r"_\d+$", "", k.split(".")[-1]).replace("_mts200b_main_channel", "")
-                    for k in csv_files if "mts200b" in k.lower()}
-    all_rooms = set(rooms_with_data) | meross_rooms
+    meross_rooms = {_room_key(k) for k in csv_files if "mts200b" in k.lower()}
+    all_rooms = rooms_with_data | meross_rooms
     n_controlled = len(all_rooms)
 
     if n_controlled == 0:
@@ -661,9 +706,25 @@ def check_H1a(csv_files: dict) -> dict:
                        "No room controller with valid data. No automatic heat emission control. L0.",
                        {"controlled_rooms": 0})
 
-    # L3 evidence: controllers report into a common platform. Every entity here
-    # carries a Home Assistant entity_id, which is that platform.
-    on_bacs = n_controlled >= H1A_MIN_ROOM_CONTROLLERS
+    # L3 evidence: communication between the controllers and to the BACS.
+    #
+    # The presence of an entity in the export cannot evidence this. Every entity
+    # in the dataset is in Home Assistant by construction, so a test built on
+    # presence never fails for any service and therefore discriminates nothing.
+    # It would also collapse into the L1 test above, which counts the same
+    # controllers, leaving L2 unreachable.
+    #
+    # What does discriminate is direction of traffic. In Home Assistant a
+    # "climate" entity is a commandable actuator: the platform writes a setpoint
+    # to it and it reports its state back. A "sensor" entity is read-only. A
+    # controller the platform can command is communicating in both directions,
+    # which is the observable difference between a networked controller and one
+    # whose readings merely happen to be logged.
+    # Intersected with the heating rooms on purpose. The building also exposes
+    # its air conditioners as climate entities, and counting those here would
+    # report cooling units as networked heat emission controllers.
+    commandable_rooms = {_room_key(k) for k in csv_files if k.startswith("climate.")} & all_rooms
+    on_bacs = len(commandable_rooms) >= 1
 
     # L4 evidence: occupancy detection integrated with the room control, and
     # observed across enough of the period to count as operational. Uses the
@@ -676,16 +737,21 @@ def check_H1a(csv_files: dict) -> dict:
         level, status, conf = 1, VERIFIED, 0.70
         note = (f"Only {n_controlled} controlled zone found, which is central rather than "
                 f"individual room control. L1.")
-    elif occupancy_ok:
+    elif on_bacs and occupancy_ok:
+        # L4 reads "Individual room control WITH COMMUNICATION and occupancy
+        # detection", so it is L3 plus occupancy rather than occupancy on its
+        # own. Testing occupancy alone would let a building with presence
+        # detection but no networked controllers skip L3 and land on L4.
         level, status, conf = 4, VERIFIED, 0.78
-        note = (f"Individual room control in {n_controlled} zones, communicating to a common "
-                f"platform, with occupancy detection observed over {geo_days:.0f} days. L4.")
+        note = (f"Individual room control in {n_controlled} zones, {len(commandable_rooms)} of them "
+                f"commandable from the platform, with occupancy detection observed over "
+                f"{geo_days:.0f} days. L4.")
     elif on_bacs:
         level, status, conf = 3, VERIFIED, 0.76
-        note = (f"Individual room control in {n_controlled} zones "
-                f"({sorted(all_rooms)}), each an addressable controller reporting into a single "
-                f"platform, which satisfies the L3 condition of communication between controllers "
-                f"and to a BACS. "
+        note = (f"Individual room control in {n_controlled} zones ({sorted(all_rooms)}). "
+                f"{len(commandable_rooms)} of these are commandable from the platform, which "
+                f"both writes their setpoint and reads their state back, so communication runs "
+                f"in two directions between the controllers and the BACS as L3 requires. "
                 f"L4 additionally requires occupancy detection: geofencing in Auto mode is "
                 f"present ({geo_records} records) but spans only {geo_days:.1f} days of the "
                 f"{occ['period_days']}-day analysis period, {occ['span_fraction']*100:.1f}%, "
@@ -695,12 +761,15 @@ def check_H1a(csv_files: dict) -> dict:
                 f"which rests on these same records.")
     else:
         level, status, conf = 2, VERIFIED, 0.74
-        note = (f"Individual room control in {n_controlled} zones, but no evidence of "
-                f"communication to a central platform. L2.")
+        note = (f"Individual room control in {n_controlled} zones ({sorted(all_rooms)}), but no "
+                f"controller is commandable from the platform: every one of them is a read-only "
+                f"entity. Their readings are logged, which does not evidence the two-way "
+                f"communication between controllers and BACS that L3 requires. L2.")
 
     return _result("H-1a", status, level, conf,
                    f"Assessed against the official catalogue B wording. {note}",
                    {"controlled_rooms": n_controlled, "rooms": sorted(all_rooms),
+                    "commandable_rooms": sorted(commandable_rooms),
                     "tado_rooms": n_rooms, "tado_records": total_records,
                     "meross_rooms": sorted(meross_rooms),
                     "geofencing_records": geo_records,
@@ -754,15 +823,34 @@ def check_H2d(csv_files: dict) -> dict:
 
 def check_H3(csv_files: dict) -> dict:
     """
-    H-3: Heating performance reporting (max FL=4)
-    L1=energy readings (counter); L2=historical with trends; L3=benchmarking; L4=recommendations.
-    Evidence: Tado temperature CSVs (2 rooms) + Meross temps (3 zones) logged in Home Assistant.
+    H-3: Report information regarding heating system performance (max FL=4)
+
+    Official levels (D3.1 Review of the SRI methodology, Table 16, p.48):
+      L0 None
+      L1 Central or remote reporting of current performance KPIs
+         (e.g. temperatures, submetering energy usage)
+      L2 Central or remote reporting of current performance KPIs and historical data
+      L3 Central or remote reporting of performance evaluation including
+         forecasting and/or benchmarking
+      L4 ... also including predictive management and fault detection
+
+    Note that L1 names temperature as an acceptable KPI, so this service does
+    not depend on an energy meter. The ladder is applied by _reporting_level(),
+    shared with C-3, DHW-3 and E-2, which follows the wording above.
     """
-    tado_temp_keys = [k for k in csv_files if "_temperatura" in k and "comfoairq" not in k and "meross" not in k]
+    # Rooms, not entities. Home Assistant appends _2 to a duplicated entity, so
+    # counting keys would report the same room twice, and a room holding a
+    # single row is instrumented rather than reporting.
+    tado_temp_keys = [k for k in csv_files
+                      if "_temperatura" in k and "comfoairq" not in k and "meross" not in k
+                      and len(csv_files[k]) >= H1A_MIN_ROOM_RECORDS]
     meross_keys = [k for k in csv_files if "meross_temperature" in k]
-    n_tado = len(tado_temp_keys)
-    n_meross = len(meross_keys)
-    total_temp_sensors = n_tado + n_meross
+    tado_rooms = {_room_key(k) for k in tado_temp_keys}
+    meross_rooms = {_room_key(k) for k in meross_keys}
+    n_tado, n_meross = len(tado_rooms), len(meross_rooms)
+    # Union, not sum: several rooms carry both a Tado and a Meross sensor, and
+    # adding the two counts reported those rooms twice.
+    total_temp_sensors = len(tado_rooms | meross_rooms)
 
     if total_temp_sensors == 0:
         return _result("H-3", NA_NOT_EVIDENCED, 0, 0.0,
@@ -780,14 +868,32 @@ def check_H3(csv_files: dict) -> dict:
 
     status, gate_note = _gate(VERIFIED, n_records=tado_records + meross_records)
 
+    # Whether sub-metering exists is a fact about the dataset, so it is counted
+    # rather than asserted. Sub-metering is present here, but it meters the site
+    # rather than the heating circuit, and that distinction is the reason it
+    # does not lift this service.
+    submeters = {k: len(v) for k, v in csv_files.items()
+                 if any(t in k.lower() for t in ("shelly", "_power", "_energy"))}
+    if submeters:
+        sub_note = (f"Electrical sub-metering is present ({len(submeters)} channels, "
+                    f"{sum(submeters.values())} records) but meters the site rather than the "
+                    f"heating circuit, so it adds no heating-specific KPI.")
+    else:
+        sub_note = "No sub-metering entity found in the dataset."
+
     return _result("H-3", status, level, 0.68,
-                   f"Temperature logged in Home Assistant across {total_temp_sensors} sensors: "
-                   f"{n_tado} Tado zones ({tado_records} records) + {n_meross} Meross sensors "
-                   f"({meross_records} records). Historical temperature trends available → L2. "
-                   f"No dedicated heating energy meter CSV (Shelly not available). L3 (benchmarking) "
-                   f"and L4 (recommendations) not evidenced. Conservative: L2.",
-                   {"n_temp_sensors": total_temp_sensors, "tado_temp_records": tado_records,
-                    "meross_records": meross_records})
+                   f"Temperature logged in Home Assistant across {total_temp_sensors} rooms: "
+                   f"{n_tado} Tado zones ({tado_records} records) + {n_meross} Meross zones "
+                   f"({meross_records} records), which is a current performance KPI under the "
+                   f"official L1 wording. Eight months of continuous series make those readings "
+                   f"historical data as well, which is L2. {sub_note} "
+                   f"L3 requires forecasting or benchmarking: {len(FORECAST_ENTITIES(csv_files))} "
+                   f"forecast entities across {len(csv_files)} scanned. L4 additionally requires "
+                   f"predictive management and fault detection. Neither is evidenced. L2.",
+                   {"n_temp_rooms": total_temp_sensors, "tado_temp_records": tado_records,
+                    "meross_records": meross_records,
+                    "submetering_channels": len(submeters),
+                    "submetering_records": sum(submeters.values())})
 
 
 # Entity-name tokens for an optimum-start / self-learning heating feature. In
@@ -838,7 +944,8 @@ def check_H4(csv_files: dict) -> dict:
     """
     H-4: Flexibility and grid interaction, Heating (max FL=4)
 
-    Official levels (SRI calculation sheet v4.5, catalogue B):
+    Official levels (D3.1 Review of the SRI methodology, Table 16, p.49; the
+    same wording appears in SRI calculation sheet v4.5, catalogue B).
       L0 No automatic control
       L1 Scheduled operation of heating system
       L2 Self-learning optimal control of heating system
@@ -924,9 +1031,24 @@ def check_DHW1b(csv_files: dict) -> dict:
 
 def check_DHW1d(csv_files: dict) -> dict:
     """
-    DHW-1d: DHW storage charging — solar collector (max FL=3).
-    L1=basic solar priority; L2=weather-compensated storage; L3=predictive.
-    Evidence: Villa-Percentuale-Solare CSV (solar %, 1138 records).
+    DHW-1d: Control of DHW storage charging, with solar collector and
+    supplementary heat generation (max FL=3)
+
+    Official levels (D3.1 Review of the SRI methodology, Table for DHW, p.54):
+      L0 Manual selected control of solar energy or heat generation
+      L1 Automatic control of solar storage charge (Prio. 1) and supplementary
+         storage charge
+      L2 ... and demand-oriented supply or multi-sensor storage management
+      L3 ... demand-oriented supply and return temperature control and
+         multi-sensor storage management
+
+    L2 is not weather compensation and L3 is not prediction. Both hinge on
+    sensors: L2 on multiple sensors inside the store, L3 on those plus return
+    temperature control. Their absence is verified against the entity inventory
+    rather than assumed, so the level is excluded by observation.
+
+    Applicability: the official calculation sheet records the precondition
+    "Only applicable in case of DHW storage with solar collector".
     """
     solar_key = next((k for k in csv_files if "percentuale_solare" in k), None)
     if solar_key is None:
@@ -953,7 +1075,7 @@ def check_DHW1d(csv_files: dict) -> dict:
     # differential controller is actually regulating, not just reporting.
     d = df.dropna(subset=["last_changed"])
     monthly = pd.to_numeric(d["state"], errors="coerce").groupby(
-        d["last_changed"].dt.to_period("M")).mean().dropna()
+        _local_month(d["last_changed"])).mean().dropna()
     seasonal_swing = float(monthly.max() - monthly.min()) if len(monthly) > 1 else 0.0
 
     return_sensors = [k for k in csv_files
@@ -1033,11 +1155,11 @@ def check_DHW2b(csv_files: dict) -> dict:
          efficiency, carbon emissions and capacity)
       L3/L4 dynamic list also using predicted load
 
-    Moved out of manual_assessments.json on 2026-08-27: the solar fraction entity
-    makes the priority order observable, so this no longer needs a fixed verdict.
-    What remains unobservable is whether the ordering between the heat pump and
-    the boiler is recomputed from current efficiency, since neither generator has
-    an entity in the dataset. That limit is stated rather than assumed away.
+    The solar fraction entity makes the priority order observable, which is why
+    this service is derived from data rather than assessed documentarily. What
+    stays unobservable is whether the ordering between the heat pump and the
+    boiler is recomputed from current efficiency, since neither generator has an
+    entity in the dataset. That limit is stated rather than assumed away.
     """
     solar_key = next((k for k in csv_files if "percentuale_solare" in k), None)
     if solar_key is None:
@@ -1057,7 +1179,7 @@ def check_DHW2b(csv_files: dict) -> dict:
     at_full = float((vals > 99).mean())
     d = df.dropna(subset=["last_changed"])
     monthly = pd.to_numeric(d["state"], errors="coerce").groupby(
-        d["last_changed"].dt.to_period("M")).mean().dropna()
+        _local_month(d["last_changed"])).mean().dropna()
     swing = float(monthly.max() - monthly.min()) if len(monthly) > 1 else 0.0
 
     # Generator-level telemetry is what would let L2 be distinguished from L1.
@@ -1078,10 +1200,17 @@ def check_DHW2b(csv_files: dict) -> dict:
                 f"{len(FORECAST_ENTITIES(csv_files))} forecast entities found, so a priority "
                 f"list using predicted load is observable in principle. L3 as partial evidence.")
     elif gen_entities:
-        level, status, conf = 2, PARTIAL_EVIDENCE, 0.50
-        note = (f"{len(gen_entities)} generator entities found, so a dynamic priority list is in "
-                f"principle observable. Confirming that the ordering follows current efficiency "
-                f"is not implemented, so L2 is partial evidence.")
+        # Generator telemetry makes the question answerable; it does not answer
+        # it. L2 asks whether the ordering is recomputed from current
+        # efficiency, and the presence of entities that could show that is not
+        # evidence that it happens. Awarding L2 here would credit the building
+        # for being measurable rather than for being controlled, so the service
+        # is carried as unresolved and the uncertainty goes to the bounds.
+        level, status, conf = 1, UNRESOLVED, 0.45
+        note = (f"{len(gen_entities)} generator entities are present, so the ordering between "
+                f"generators is in principle observable, but whether that ordering is recomputed "
+                f"from current efficiency has not been tested. L1 is established by the solar "
+                f"priority; L2 is neither confirmed nor excluded, so the service is unresolved.")
     else:
         level, status, conf = 1, VERIFIED, 0.72
         note = (f"Solar fraction modulates continuously across {distinct} distinct values over "
@@ -1091,9 +1220,11 @@ def check_DHW2b(csv_files: dict) -> dict:
                 f"whenever available and the supplementary generators make up the balance, which "
                 f"is an operating priority list and meets L1. "
                 f"L2 requires that list to be recomputed from current efficiency: the dataset "
-                f"holds no entity for the INNOVA heat pump or the IMMERGAS boiler, so the ordering "
-                f"between the two supplementary generators is unobservable and L2 can be neither "
-                f"confirmed nor excluded.")
+                f"holds no entity for the boiler, which is the only supplementary DHW generator, "
+                f"so whether the split between solar and boiler responds to anything beyond solar "
+                f"availability is unobservable and L2 can be neither confirmed nor excluded. "
+                f"The air-to-water heat pump is not part of this circuit: DBL09 records the DHW "
+                f"system as the condensing boiler, its 200 L store and the solar collector.")
 
     return _result("DHW-2b", status, level, conf,
                    f"Assessed against the official catalogue B wording. {note}",
@@ -1108,9 +1239,21 @@ def check_DHW2b(csv_files: dict) -> dict:
 
 def check_DHW3(csv_files: dict) -> dict:
     """
-    DHW-3: DHW performance reporting (max FL=4).
-    L1=basic counter; L2=historical data; L3=benchmarking; L4=recommendations.
-    Evidence: Villa-Percentuale-Solare CSV (proxy for DHW solar performance).
+    DHW-3: Report information regarding domestic hot water performance (max FL=4)
+
+    Official levels (D3.1 Review of the SRI methodology, Table for DHW, p.55):
+      L0 None
+      L1 Indication of actual values (e.g. temperatures, submetering energy usage)
+      L2 Actual values and historical data
+      L3 Performance evaluation including forecasting and/or benchmarking
+      L4 ... also including predictive management and fault detection
+
+    Note that L1 is an indication of actual values, with temperature given as an
+    acceptable example, so this service does not require an energy meter. Note
+    also that the wording differs from H-3, which asks for CENTRAL OR REMOTE
+    reporting: the argument for one does not transfer to the other.
+
+    The ladder is applied by _reporting_level(), shared with H-3, C-3 and E-2.
     """
     solar_key = next((k for k in csv_files if "percentuale_solare" in k), None)
     if solar_key is None:
@@ -1184,46 +1327,82 @@ def _get_mts200b_cooling(csv_files: dict) -> dict:
 
 def check_C1a(csv_files: dict) -> dict:
     """
-    C-1a: Cooling emission control at room level (max FL=4).
-    L0=no automatic control; L1=central auto; L2=individual room; L3=room+scheduling; L4=demand-based.
-    Evidence: Meross MTS200B in Soggiorno + Cucina with hvac_action=cooling confirmed.
-    Each room has independent thermostat controlling its own AC split → L2.
+    C-1a: Cooling emission control (max FL=4)
+
+    Official levels (D3.1 Review of the SRI methodology, Cooling table):
+      L0 No automatic control
+      L1 Central automatic control
+      L2 Individual room control
+      L3 Individual room control with communication between controllers and to BACS
+      L4 Individual room control with communication and occupancy detection
+
+    This is the same ladder as H-1a with cooling in place of heat, so it is
+    assessed the same way. L3 is not scheduling and L4 is not demand control:
+    L3 asks whether the room controllers talk to a BACS, L4 adds occupancy. The
+    number of rooms cannot answer either, so the discriminator is the one H-1a
+    uses, whether the controller is commandable from the platform rather than
+    merely readable.
     """
     cooling = _get_mts200b_cooling(csv_files)
     if not cooling:
         return _result("C-1a", NA_NOT_EVIDENCED, 0, 0.70,
-                       "No MTS200B cooling records found in analysis period. "
-                       "AC splits installed Jul 2026; extend period or re-export CSVs.",
-                       {"note": "cooling data absent from period"})
+                       "No cooling operation found in the analysis period, so room-level "
+                       "cooling emission control cannot be assessed.",
+                       {"note": "no cooling records in period"})
     n_rooms = len(cooling)
     total_records = sum(len(df) for df in cooling.values())
-    rooms = [k.replace("climate.", "").replace("_mts200b_main_channel", "") for k in cooling]
-    level = 2 if n_rooms >= 2 else 1
-    conf  = 0.78 if n_rooms >= 2 else 0.62
+    rooms = sorted(_room_key(k) for k in cooling)
+    commandable = sorted({_room_key(k) for k in cooling if k.startswith("climate.")})
     occ = _occupancy_evidence(csv_files)
-    if n_rooms >= 2 and occ["operational"]:
-        level = 4
-    elif n_rooms >= 2:
-        level = 3
+
+    if n_rooms < 2:
+        level, conf = 1, 0.62
+        note = (f"Cooling is controlled from a single zone ({rooms}), which is central rather "
+                f"than individual room control. L1.")
+    elif commandable and occ["operational"]:
+        level, conf = 4, 0.76
+        note = (f"Individual room control in {n_rooms} rooms ({rooms}), {len(commandable)} of "
+                f"them commandable from the platform, with occupancy detection observed over "
+                f"{occ['span_days']:.0f} days. L4.")
+    elif commandable:
+        level, conf = 3, 0.76
+        note = (f"Individual room control in {n_rooms} rooms ({rooms}), {total_records} cooling "
+                f"records. All {len(commandable)} are climate entities the platform both writes "
+                f"a set point to and reads state back from, so communication runs in two "
+                f"directions between the controllers and the BACS, which is L3. "
+                f"L4 additionally requires occupancy detection: geofencing spans "
+                f"{occ['span_fraction']*100:.1f}% of the period, below the "
+                f"{MIN_OPERATIONAL_SPAN_FRACTION*100:.0f}% needed to count as operational, the "
+                f"same threshold that governs H-1a and MC-9.")
+    else:
+        level, conf = 2, 0.74
+        note = (f"Individual room control in {n_rooms} rooms ({rooms}), but no controller is "
+                f"commandable from the platform, so two-way communication with a BACS is not "
+                f"evidenced. L2.")
 
     status, gate_note = _gate(VERIFIED, n_records=total_records)
     return _result("C-1a", status, level, conf,
-                   f"Meross MTS200B cooling confirmed in {n_rooms} room(s): {rooms}. "
-                   f"Total cooling records: {total_records}. Each room has independent "
-                   f"thermostat (MTS200B) controlling its AC split → individual room control. "
-                   f"L2 (individual room control) verified. L3 (+ scheduling) technically possible "
-                   f"via Meross app but not directly observable from hvac_action CSV alone. "
-                   f"Conservative: L2.",
-                   {"cooling_rooms": rooms, "total_records": total_records})
+                   f"Assessed against the official catalogue wording. {gate_note}{note}",
+                   {"cooling_rooms": rooms, "commandable_rooms": commandable,
+                    "total_records": total_records,
+                    "occupancy_span_fraction": occ["span_fraction"]})
 
 
 def check_C1b(csv_files: dict) -> dict:
     """C-1b: Emission control for TABS (cooling). No TABS cooling system present."""
     return _result("C-1b", NA_EXPLICIT_ABSENCE, 0, 0.95,
-                   "No cooling TABS (Thermally Activated Building Systems) documented. "
-                   "Cooling via DX AC splits (MTS200B + ESPHome). Radiant floor is heating-only. "
-                   "Service not applicable.",
-                   {"source": "DBL09 + CSV"})
+                   "Not applicable. The official calculation sheet records the precondition "
+                   "\"Only applicable in case mechanical cooling systems based on TABS\". DBL09 "
+                   "row 235 names the ground floor circuit a radiant floor HEATING system, and "
+                   "cooling is produced by direct expansion splits, which emit through their own "
+                   "indoor units and not through the slab. "
+                   "The obvious objection is that the air-to-water heat pump has a cooling mode, "
+                   "documented in its manual, so the floor circuit could in principle be chilled. "
+                   "Nothing shows that it is: no entity exists for the heat pump or for the floor "
+                   "circuits, so floor cooling is unobserved, and an available capability is not "
+                   "credited as operation. Note that the DBL does not document the cooling "
+                   "system at all.",
+                   {"source": "DBL09 row 235 + manufacturer documentation + entity inventory"})
 
 
 def check_C1c(csv_files: dict) -> dict:
@@ -1233,10 +1412,15 @@ def check_C1c(csv_files: dict) -> dict:
     Service not applicable to DX systems.
     """
     return _result("C-1c", NA_EXPLICIT_ABSENCE, 0, 0.90,
-                   "Cooling via DX AC splits (Meross MTS200B + ESPHome) — no chilled water "
-                   "distribution network present. C-1c applies to hydronic cooling systems only. "
-                   "Not applicable.",
-                   {"source": "DBL09 + CSV"})
+                   "Not applicable. The official calculation sheet records the precondition "
+                   "\"Only applicable in case mechanical cooling systems with hydronic "
+                   "distribution\". Cooling is by direct expansion: the manufacturer "
+                   "documentation describes an R410A multi-split, in which refrigerant runs from "
+                   "the outdoor unit to the evaporators with no chilled water in between. The "
+                   "entity inventory holds no water, flow or return series. The heat pump has a "
+                   "cooling mode, but no evidence shows it chilling the floor circuit. The DBL "
+                   "does not document the cooling system.",
+                   {"source": "manufacturer documentation + entity inventory"})
 
 
 def check_C1d(csv_files: dict) -> dict:
@@ -1245,9 +1429,11 @@ def check_C1d(csv_files: dict) -> dict:
     DX system has no distribution pump for cooling. Not applicable.
     """
     return _result("C-1d", NA_EXPLICIT_ABSENCE, 0, 0.90,
-                   "DX cooling system (AC splits) has no hydronic distribution pump. "
-                   "C-1d applies to chilled water networks only. Not applicable.",
-                   {"source": "DBL09"})
+                   "Not applicable. With cooling by direct expansion there is no chilled "
+                   "water network and therefore no distribution pump to control. The IFC models "
+                   "contain no IfcPump of any kind and the entity inventory holds no pump "
+                   "series. The DBL does not document the cooling system.",
+                   {"source": "IFC (0 IfcPump) + manufacturer documentation"})
 
 
 C1F_BUCKET = "h"                 # resolution at which two actions count as simultaneous
@@ -1284,14 +1470,24 @@ def _hvac_action_timeline(csv_files: dict) -> dict:
 def check_C1f(csv_files: dict) -> dict:
     """
     C-1f: Interlock, avoiding simultaneous heating and cooling (max FL=2)
-    L0 = simultaneous heating and cooling observed within the same zone;
-    L1 = no same-zone conflict, but different zones heat and cool at the same time;
-    L2 = no simultaneous operation observed while both modes were available.
+    Official levels (D3.1 Review of the SRI methodology, Cooling table):
+      L0 No interlock
+      L1 Partial interlock, minimising the risk of simultaneous heating and
+         cooling, e.g. by sliding setpoints
+      L2 Total interlock, the control system ensures no simultaneous heating and
+         cooling can take place
 
-    Assessed from hvac_action timelines rather than from the absence of a
-    documented interlock. Note the asymmetry: observing a conflict proves the
-    interlock is absent, whereas observing no conflict only supports L2 if the
-    building actually had the opportunity to produce one.
+    The service is about a single room, so the test is a same-zone conflict, and
+    the asymmetry matters: observing a conflict proves there is no interlock,
+    whereas observing none proves nothing unless a conflict was possible. A room
+    has to hold both a heat emitter and a cooling emitter, and both have to have
+    been active, before its quiet record means anything.
+
+    Where no room can conflict, the absence of conflict is not evidence of an
+    interlock and the question falls back on whether any mechanism exists at all.
+    Heating and cooling driven by separate controllers that do not exchange
+    state have neither the sliding setpoints of L1 nor the enforcement of L2:
+    sharing a monitoring platform is not a control link.
     """
     timeline = _hvac_action_timeline(csv_files)
     if not timeline:
@@ -1330,6 +1526,10 @@ def check_C1f(csv_files: dict) -> dict:
 
     # How long were both modes actually observable? Claims that rest on the
     # ABSENCE of a conflict are only as strong as this window.
+    # Rooms that were seen heating AND cooling at some point. Only these can
+    # ever produce a same-zone conflict, so only their record can support a
+    # claim that an interlock is working.
+    dual_mode_zones = {z for z, v in timeline.items() if v["heating"] and v["cooling"]}
     both_mode_days = len({h.date() for h in heat_hours} | {h.date() for h in cool_hours})
     window_ok = both_mode_days >= C1F_MIN_OBSERVATION_DAYS
 
@@ -1340,16 +1540,32 @@ def check_C1f(csv_files: dict) -> dict:
         note = (f"Simultaneous heating and cooling observed within the same zone: "
                 f"{same_zone_conflicts}. No interlock is being enforced at room level. "
                 f"A single observed conflict is sufficient to establish this.")
+    elif not dual_mode_zones:
+        # No room was ever observed in both modes, so a same-zone conflict could
+        # not have occurred and its absence carries no information. The verdict
+        # therefore rests on whether an interlock mechanism exists, and separate
+        # controllers that never exchange state are neither L1 nor L2.
+        level, status, conf = 0, VERIFIED, 0.75
+        note = (f"No room was observed in both modes: heating appears in "
+                f"{sorted(zones_heating)} and cooling in {sorted(zones_cooling)}, with no zone "
+                f"in common. A same-zone conflict was therefore impossible and its absence "
+                f"cannot evidence an interlock. "
+                f"L1 would need a mechanism minimising the risk, such as sliding setpoints, and "
+                f"L2 a control system enforcing it. Heating is delivered by one manufacturer's "
+                f"thermostats and cooling by another's, they exchange no state, and the only "
+                f"thing they share is a monitoring platform, which is not a control link. No "
+                f"interlock exists to be credited. L0.")
     elif overlap_hours:
         level = 1
         status = VERIFIED if window_ok else PARTIAL_EVIDENCE
         conf = 0.78 if window_ok else 0.55
-        note = (f"No same-zone conflict, but {len(overlap_hours)} hours across {overlap_days} "
-                f"days show at least one zone heating while another cools "
+        note = (f"No same-zone conflict in the {len(dual_mode_zones)} rooms that were observed "
+                f"in both modes ({sorted(dual_mode_zones)}), while {len(overlap_hours)} hours "
+                f"across {overlap_days} days show one zone heating as another cools "
                 f"(heating: {sorted(zones_heating)}; cooling: {sorted(zones_cooling)}). "
-                f"Building-level interlock is disproven. The room-level claim rests on the "
-                f"absence of a same-zone conflict over {both_mode_days} days of dual-mode "
-                f"observation, "
+                f"Different rooms in different modes is normal operation and not what this "
+                f"service asks about. The room-level claim rests on "
+                f"{both_mode_days} days of dual-mode observation, "
                 + (f"which meets the {C1F_MIN_OBSERVATION_DAYS}-day threshold."
                    if window_ok else
                    f"below the {C1F_MIN_OBSERVATION_DAYS}-day threshold, so L1 is recorded as "
@@ -1382,15 +1598,44 @@ def check_C1f(csv_files: dict) -> dict:
 def check_C1g(csv_files: dict) -> dict:
     """C-1g: Control of cooling Thermal Energy Storage (TES). No TES present."""
     return _result("C-1g", NA_EXPLICIT_ABSENCE, 0, 0.95,
-                   "No cooling TES documented in DBL09, DBL08, or IFC. Not applicable.",
-                   {"source": "DBL09 + IFC"})
+                   "Not applicable. The official calculation sheet records the precondition "
+                   "\"Only applicable in case mechanical cooling systems are present and include "
+                   "TES\". No cold storage appears in the IFC models, which contain no IfcTank, "
+                   "and no storage entity exists in the operational record. Note that the DBL "
+                   "does not document the cooling system at all, so its silence is not evidence "
+                   "either way and the finding rests on the IFC and the entity inventory.",
+                   {"source": "IFC (0 IfcTank) + entity inventory"})
+
+
+# Manufacturer documentation for the installed cooling generator, from the
+# building's technical file. Set to None where no datasheet is held, which makes
+# the fallback disappear rather than silently persist for another building.
+COOLING_GENERATOR_INVERTER = (
+    "Mitsubishi MXZ-3D54VA, described in its product information as an inverter "
+    "heat pump, R410A multi-split, nominal cooling capacity 5.4 kW over a 2.9 to "
+    "6.8 kW range")
 
 
 def check_C2a(csv_files: dict) -> dict:
     """
-    C-2a: Generator control for cooling (max FL=3).
-    L0=manual on/off; L1=automatic on/off via thermostat; L2=variable capacity; L3=demand-based.
-    MTS200B thermostat sends on/off commands to AC split based on setpoint → L1.
+    C-2a: Generator control for cooling (max FL=3)
+
+    Official levels (D3.1 Review of the SRI methodology, Cooling table):
+      L0 On/Off-control of cooling production
+      L1 Multi-stage control of capacity depending on load or demand
+         (e.g. on/off of several compressors)
+      L2 Variable control of capacity depending on load or demand
+         (e.g. hot gas bypass, inverter frequency control)
+      L3 Variable control of capacity AND external signals from grid
+
+    L0 is not manual control and L1 is not "automatic via thermostat": the
+    ladder is about how the generator's capacity is regulated, not about who
+    starts it. The wording of L2 is the same as H-2b's, down to naming inverter
+    frequency control as the example, so the two services are assessed the same
+    way. Neither has capacity telemetry and the logbook has no field for
+    capacity control, so both fall back to manufacturer documentation, which can
+    establish an inherent characteristic such as an inverter drive but never how
+    the building operated it. Any level resting on that is marked accordingly.
     """
     cooling = _get_mts200b_cooling(csv_files)
     if not cooling:
@@ -1411,6 +1656,11 @@ def check_C2a(csv_files: dict) -> dict:
                                                           "modulation", "frequency"))]
     grid_signals = [k for k in csv_files
                     if any(t in k.lower() for t in DSM_SIGNAL_TOKENS)]
+    # Documented inherent characteristic of the installed outdoor unit, held in
+    # the building's technical file. Last resort in the evidence hierarchy and
+    # used here for the same reason as in H-2b: no capacity telemetry exists and
+    # the logbook has nowhere to record how a generator regulates capacity.
+    inverter_documented = COOLING_GENERATOR_INVERTER
 
     if capacity_entities and grid_signals:
         level, conf = 3, 0.70
@@ -1420,17 +1670,28 @@ def check_C2a(csv_files: dict) -> dict:
         level, conf = 2, 0.72
         note = (f"{len(capacity_entities)} entities report AC capacity or modulation, so variable "
                 f"capacity control is observable. L2.")
+    elif inverter_documented:
+        level, conf = 2, 0.70
+        note = (f"The thermostats in {n_rooms} rooms ({rooms}) start and stop the splits against "
+                f"a set point, and hvac_action reports only 'cooling' or 'off' across "
+                f"{total_rec} records, so capacity behaviour was not observed. No entity reports "
+                f"the units' power, modulation or compressor frequency, and the logbook has no "
+                f"field for how a generator regulates capacity, so neither the operational "
+                f"record nor the DBL can answer this. "
+                f"Falling back to the manufacturer documentation held for this building, the "
+                f"outdoor unit is declared an inverter unit ({inverter_documented}). Inverter "
+                f"frequency control is the example the catalogue itself gives for L2, and this "
+                f"is the same evidence route accepted for H-2b. L2, on documentary evidence of "
+                f"the last resort kind.")
     else:
         level, conf = 0, 0.72
-        note = (f"The MTS200B thermostats in {n_rooms} rooms ({rooms}) start and stop the AC "
-                f"splits against a temperature set point, and hvac_action reports only 'cooling' "
-                f"or 'off' across {total_rec} records: what is demonstrated is on/off control of "
-                f"cooling production, which is the official L0. "
-                f"L1 requires multi-stage capacity control and L2 variable capacity control. The "
-                f"splits may well be inverter driven, but no entity reports their power, "
-                f"modulation or compressor frequency, so capacity behaviour is unobservable. "
-                f"Note the contrast with H-2b, where the logbook names an inverter heat pump "
-                f"explicitly; here the logbook records only 'AC split (ESPHome)'.")
+        note = (f"The thermostats in {n_rooms} rooms ({rooms}) start and stop the splits against "
+                f"a temperature set point, and hvac_action reports only 'cooling' or 'off' "
+                f"across {total_rec} records: what is demonstrated is on/off control of cooling "
+                f"production, which is the official L0. L1 would require multi-stage capacity "
+                f"control and L2 variable capacity control; no entity reports power, modulation "
+                f"or compressor frequency, and no manufacturer documentation for the cooling "
+                f"generator is held, so capacity behaviour is unobservable.")
 
     status, gate_note = _gate(VERIFIED, n_records=total_rec)
 
@@ -1444,15 +1705,26 @@ def check_C2a(csv_files: dict) -> dict:
 def check_C2b(csv_files: dict) -> dict:
     """C-2b: Sequencing of multiple cooling generators. Only one type of cooling generator."""
     return _result("C-2b", NA_EXPLICIT_ABSENCE, 0, 0.90,
-                   "Building has only one type of cooling system (DX AC splits). "
-                   "No chiller or second cooling generator type to sequence. Not applicable.",
-                   {"source": "DBL09"})
+                   "Not applicable. The official calculation sheet records the precondition "
+                   "\"Only applicable in case multiple mechanical cooling systems are present\". "
+                   "Cooling is produced by a single outdoor unit, a Mitsubishi MXZ-3D54VA "
+                   "multi-split serving up to three indoor units, so there is no second "
+                   "generator to sequence against. Evidence is the manufacturer documentation "
+                   "and the entity inventory: the DBL does not document the cooling system.",
+                   {"source": "manufacturer documentation + entity inventory"})
 
 
 def check_C3(csv_files: dict) -> dict:
     """
-    C-3: Reporting information on cooling system performance (max FL=4).
-    L0=none; L1=current data; L2=historical trends; L3=multi-system analysis; L4=predictive.
+    C-3: Report information regarding cooling system performance (max FL=4)
+
+    Official levels (D3.1, Cooling table): L0 none; L1 central or remote
+    reporting of current performance KPIs, with temperatures named as an
+    acceptable example; L2 that plus historical data; L3 performance evaluation
+    including forecasting and/or benchmarking; L4 that plus predictive
+    management and fault detection. L3 is not multi-system analysis and L4 is
+    not prediction alone. The ladder is applied by _reporting_level(), shared
+    with H-3, DHW-3 and E-2.
     Home Assistant logs hvac_action states for MTS200B → L1 (current/recent data available).
     """
     cooling = _get_mts200b_cooling(csv_files)
@@ -1510,14 +1782,21 @@ def check_C3(csv_files: dict) -> dict:
 
 def check_C4(csv_files: dict) -> dict:
     """
-    C-4: Cooling flexibility and grid interaction (max FL=4)
-    L0 = no grid interaction; L1 = cooling can be shifted on an external signal;
-    L2 = scheduled load shifting; L3/L4 = predictive or market-driven modulation.
+    C-4: Flexibility and grid interaction, Cooling (max FL=4)
 
-    Grid interaction requires a signal to react to. The check verifies the
-    absence of any tariff, price or demand-response channel in the entity
-    inventory before concluding L0, and records whether cooling operation is
-    even observable, so the verdict is falsifiable if a signal appears later.
+    Official levels (D3.1 Review of the SRI methodology, Cooling table):
+      L0 No automatic control
+      L1 Scheduled operation of cooling system
+      L2 Self-learning optimal control of cooling system
+      L3 Cooling system capable of flexible control through grid signals (DSM)
+      L4 Optimized control based on local predictions and grid signals
+
+    Only L3 and L4 involve the grid. L1 and L2 are about the building's own
+    control and have to be tested even when no grid signal exists, otherwise a
+    scheduled system scores the same as an unmanaged one. This is the same
+    ladder as H-4 and uses the same evidence: setpoints that move over time for
+    scheduled operation, and an optimum-start feature that is present and
+    enabled for self-learning control.
     """
     cooling = _get_mts200b_cooling(csv_files)
     n_cool = sum(len(df) for df in cooling.values()) if cooling else 0
@@ -1538,16 +1817,43 @@ def check_C4(csv_files: dict) -> dict:
                         "dsm_signal_entities": len(dsm_entities)})
 
     if not dsm_entities:
-        return _result("C-4", VERIFIED, 0, 0.82,
-                       f"Cooling operation confirmed ({n_cool} records across "
-                       f"{len(cooling)} zones). Entity inventory scanned across "
+        # No grid signal rules out L3 and L4. What remains is the building's own
+        # control, which is where L1 and L2 live.
+        cool_zones = {_room_key(k) for k in cooling}
+        sched_zones, sched_detail = _schedule_evidence(csv_files)
+        scheduled = sorted(cool_zones & sched_zones)
+        sl_entities, sl_enabled, sl_states = _self_learning_evidence(csv_files)
+
+        if sl_entities and sl_enabled > 0:
+            level, conf = 2, 0.72
+            extra = (f"Self-learning control is enabled ({sl_enabled} records across "
+                     f"{len(sl_entities)} optimum-start entities), which is L2.")
+        elif scheduled:
+            level, conf = 1, 0.75
+            extra = (f"Set points move over time in {len(scheduled)} of the cooling zones "
+                     f"({scheduled}), which is scheduled operation and meets L1. L2 requires "
+                     f"self-learning optimal control: {len(sl_entities)} optimum-start entities "
+                     f"exist and none is enabled (observed states: {sl_states}), so the "
+                     f"capability is installed and switched off, which excludes L2 positively.")
+        else:
+            level, conf = 0, 0.75
+            extra = ("No cooling zone shows a set point that moves over time, so scheduled "
+                     "operation is not evidenced and L1 is not reached.")
+
+        return _result("C-4", VERIFIED, level, conf,
+                       f"Assessed against the official catalogue wording. Cooling operation "
+                       f"confirmed ({n_cool} records across {len(cooling)} zones). {extra} "
+                       f"L3 requires a grid signal: the entity inventory was scanned across "
                        f"{len(csv_files)} entities for any tariff, price, demand-response or "
-                       f"curtailment signal: zero matches. With no external signal reaching the "
-                       f"building, cooling cannot be shifted in response to the grid regardless "
-                       f"of the hardware's capability, so L0 is an observed result and not an "
-                       f"assumption. Local PV self-consumption is assessed separately under E-4 "
-                       f"and does not constitute grid interaction for this service.",
+                       f"curtailment channel and returned zero matches, so cooling cannot be "
+                       f"shifted in response to the grid whatever the hardware allows. That "
+                       f"rules out L3 and L4 as an observed result rather than an assumption. "
+                       f"Local PV self-consumption is assessed separately under E-4 and is not "
+                       f"grid interaction for this service.",
                        {"cooling_records": n_cool, "cooling_zones": len(cooling),
+                        "scheduled_cooling_zones": scheduled,
+                        "self_learning_entities": len(sl_entities),
+                        "self_learning_enabled_records": sl_enabled,
                         "dsm_signal_entities": 0, "entities_scanned": len(csv_files)})
 
     return _result("C-4", PARTIAL_EVIDENCE, 1, 0.50,
@@ -1582,6 +1888,18 @@ def _hourly(series_df, col="state"):
     if d.empty:
         return None
     return d.set_index("last_changed")["_v"].sort_index().resample("1h").mean()
+
+
+def _local_month(ts):
+    """Calendar month at the building, from a UTC log timestamp.
+
+    Grouping UTC timestamps by month puts the last hour of December into
+    December even though it is already January in Rome. On this dataset that
+    produced a phantom 2025-12 bucket holding a single reading, which then set
+    the minimum of a seasonal range and doubled the swing that got reported.
+    """
+    ts = pd.to_datetime(ts, utc=True)
+    return ts.dt.tz_convert(BUILDING_TZ).dt.to_period("M")
 
 
 def _local_hour(ts):
@@ -1695,14 +2013,22 @@ def check_V1a(csv_files: dict) -> dict:
                 f"{V1A_MIN_HOUR_ETA2*100:.0f}% threshold: clock control. L1.")
     else:
         level, conf = 0, 0.70
-        note = (f"Neither automatic mode is evidenced. Hour of day explains only "
+        occ_note = (f"L2 asks for occupancy detection control. The only occupancy signal in the "
+                    f"dataset is geofencing, which holds too few records to be cross-correlated "
+                    f"with the flow series, so L2 is untested rather than excluded."
+                    if occ_sensor is None else
+                    f"Flow correlates with the occupancy signal {occ_sensor} at r={occ_r:+.2f}, "
+                    f"below the {V1A_MIN_AQ_CORRELATION} needed for occupancy control (L2).")
+        note = (f"No automatic control at the room level is evidenced. Hour of day explains only "
                 f"{eta2*100:.1f}% of flow variance, so there is no clock control (L1). "
+                f"{occ_note} "
                 f"The strongest correlation with any of the {len(aq)} air quality sensors is "
                 f"{best_sensor} at r={best_r:+.2f}, well below the "
                 f"{V1A_MIN_AQ_CORRELATION} needed for demand control (L3), and no CO2 or VOC "
                 f"sensor exists at all. No room dampers ({len(dampers)} found), so L4 is out. "
-                f"The unit holds a small number of fixed flow set points, which is the "
-                f"signature of manually selected presets. L0 (manual control).")
+                f"The flow does vary, and continuously rather than in a few preset steps, but it "
+                f"follows neither the clock nor any sensor, so what modulates is the unit itself. "
+                f"At the room level that is L0.")
 
     return _result("V-1a", VERIFIED, level, conf,
                    f"Assessed against the official catalogue B wording. {note} "
@@ -1716,11 +2042,37 @@ def check_V1a(csv_files: dict) -> dict:
                                    "min_hour_eta2": V1A_MIN_HOUR_ETA2}})
 
 
+# Thresholds for reading multi-stage operation off a fan duty series. The
+# catalogue describes the behaviour but does not quantify it, so these are a
+# Method C decision and are recorded as such.
+V1C_NEAR_MAX_DUTY_PCT = 80.0   # at or above this the fan counts as running full
+V1C_REDUCED_DUTY_PCT = 55.0    # at or below this it counts as a reduced stage
+V1C_MIN_REDUCED_SHARE = 0.20   # share of readings at a reduced stage
+V1C_MAX_FULL_SHARE = 0.50      # above this the fan is effectively always full
+
+
 def check_V1c(csv_files: dict) -> dict:
     """
-    V-1c: Air flow/pressure control at AHU level (max FL=4)
-    L1=fixed speed; L2=manually adjustable speed; L3=scheduled; L4=demand-based.
-    Evidence: ComfoAirQ_Supply-Fan-Duty CSV — fan duty varies.
+    V-1c: Air flow or pressure control at the air handler level (max FL=4)
+
+    Official levels (D3.1 Review of the SRI methodology, Ventilation table):
+      L0 No automatic control: continuously supplies air flow for a maximum
+         load of all rooms
+      L1 On off time control: continuous supply for a maximum load of all rooms
+         DURING NOMINAL OCCUPANCY TIME
+      L2 Multi-stage control: to reduce the auxiliary energy demand of the fan
+      L3 Automatic flow or pressure control WITHOUT pressure reset: load
+         dependent supply for the demand of all connected rooms
+      L4 Automatic flow or pressure control WITH pressure reset, for variable
+         air volume systems with a variable frequency drive
+
+    The distinctions are easy to get backwards. Fixed continuous speed is L0,
+    not L1; L1 is specifically time control. L2 is automatic multi-stage
+    operation that keeps the fan below maximum, not the ability of a person to
+    change a preset. Scheduling does not appear at L3 at all. So the question
+    for L2 is whether the fan actually runs at reduced stages, which is a
+    property of the duty series, and the question for L3 is whether the flow
+    follows a load signal, which V-1a already establishes it does not.
     """
     fan_key = next((k for k in csv_files if "comfoairq_supply_fan_duty" in k), None)
     if fan_key is None:
@@ -1737,25 +2089,47 @@ def check_V1c(csv_files: dict) -> dict:
     n_unique = len(unique_vals)
     val_range = f"{vals.min():.0f}%–{vals.max():.0f}%"
 
-    # ComfoAir Q450 has multiple fan speed presets (Away/Low/Medium/High/Boost)
-    # Multiple duty levels in CSV = manually adjustable → L2
-    # Scheduled/auto control possible via ComfoAir app but cannot verify from duty % alone
+    # What separates L0 from L2 is whether the fan is held at the maximum load of
+    # all rooms or runs at reduced stages. That is measurable directly: the share
+    # of the period spent near full duty against the share spent well below it.
     pressure_entities = [k for k in csv_files
                          if any(t in k.lower() for t in ("pressure", "pressione"))]
-    if n_unique >= 3 and pressure_entities:
-        level = 4
-        conf = 0.72
-        note = (f"{n_unique} distinct duty levels ({val_range}) with "
-                f"{len(pressure_entities)} pressure entities: automatic flow control with "
-                f"pressure reset. L4.")
-    elif n_unique >= 3:
-        level = 2
-        conf = 0.72
-        note = f"{n_unique} distinct duty levels ({val_range}) → manually adjustable speed confirmed → L2."
+    near_max = float((vals >= V1C_NEAR_MAX_DUTY_PCT).mean())
+    reduced = float((vals <= V1C_REDUCED_DUTY_PCT).mean())
+
+    if pressure_entities and n_unique >= 3:
+        # L4 needs pressure reset on a VAV system with a variable frequency
+        # drive. A pressure entity is a precondition for observing that, not
+        # evidence of it, so the finding is reported and left unresolved rather
+        # than converted into a level.
+        level, conf = 2, 0.55
+        note = (f"Duty is held below {V1C_REDUCED_DUTY_PCT}% for {reduced*100:.0f}% of readings "
+                f"and reaches {V1C_NEAR_MAX_DUTY_PCT}% or above only {near_max*100:.0f}% of the "
+                f"time, which is multi-stage operation and meets L2. "
+                f"{len(pressure_entities)} pressure entities exist, so pressure control could in "
+                f"principle be tested, but whether a pressure reset is applied has not been "
+                f"established and L4 is not awarded on the strength of the sensor existing.")
+    elif reduced >= V1C_MIN_REDUCED_SHARE and near_max <= V1C_MAX_FULL_SHARE:
+        level, conf = 2, 0.75
+        note = (f"Fan duty spans {val_range} across {n_unique} distinct values. It sits at or "
+                f"below {V1C_REDUCED_DUTY_PCT}% for {reduced*100:.0f}% of readings and reaches "
+                f"{V1C_NEAR_MAX_DUTY_PCT}% or above for only {near_max*100:.0f}%, so the unit is "
+                f"not supplying the maximum load of all rooms continuously, which rules out L0, "
+                f"and it is running at reduced stages, which is the L2 condition of multi-stage "
+                f"control to reduce the auxiliary energy demand of the fan. "
+                f"L3 would require the flow to follow a load signal: V-1a finds no correlation "
+                f"between flow and any air quality sensor above 0.26. L4 additionally requires "
+                f"pressure reset, and no pressure entity exists.")
+    elif n_unique <= 2:
+        level, conf = 0, 0.70
+        note = (f"Only {n_unique} duty value(s) observed ({val_range}): the fan runs continuously "
+                f"at a fixed speed, which is L0. L1 would require that supply be time controlled "
+                f"to nominal occupancy hours.")
     else:
-        level = 1
-        conf = 0.60
-        note = f"Only {n_unique} duty level(s) observed → appears fixed speed → L1."
+        level, conf = 0, 0.65
+        note = (f"Fan duty varies across {n_unique} values ({val_range}) but stays near maximum "
+                f"{near_max*100:.0f}% of the time and drops below {V1C_REDUCED_DUTY_PCT}% only "
+                f"{reduced*100:.0f}%, so reduced-stage operation is not established. L0.")
 
     # No coverage floor here. The ComfoAir logs the duty on change, not on a fixed
     # sampling interval, so a fan holding one speed overnight writes no rows at all.
@@ -1764,18 +2138,43 @@ def check_V1c(csv_files: dict) -> dict:
     # with lower coverage still and are reported as verified. The record floor stays.
     status, gate_note = _gate(VERIFIED, n_records=len(vals))
     return _result("V-1c", status, level, conf,
-                   f"ComfoAirQ_Supply-Fan-Duty CSV: {len(vals)} records, {cov['period_days']} days, {gate_note}"
-                   f"coverage {cov['coverage_pct']}%. {note} "
-                   f"L3 (schedule-based) and L4 (demand/CO2-based) not verifiable from duty % alone.",
+                   f"Assessed against the official catalogue wording. Supply fan duty series: "
+                   f"{len(vals)} records over {cov['period_days']} days. {gate_note}{note}",
                    {"n_records": len(vals), "n_unique_levels": n_unique,
-                    "duty_range": val_range, "coverage_pct": cov["coverage_pct"]})
+                    "duty_range": val_range, "coverage_pct": cov["coverage_pct"],
+                    "share_at_reduced_duty": round(reduced, 3),
+                    "share_near_max_duty": round(near_max, 3),
+                    "pressure_entities": len(pressure_entities),
+                    "thresholds": {"near_max_duty_pct": V1C_NEAR_MAX_DUTY_PCT,
+                                   "reduced_duty_pct": V1C_REDUCED_DUTY_PCT}})
+
+
+# How much better the room sensors must explain the bypass before the control is
+# credited to them rather than to the unit's own air. The catalogue does not
+# quantify this; the margin exists because in summer indoor, outdoor and room
+# temperatures all rise together, so similar correlations are the expected
+# result of a shared season rather than of a shared control loop.
+V2C_ROOM_SENSOR_MARGIN = 0.15
 
 
 def check_V2c(csv_files: dict) -> dict:
     """
-    V-2c: Heat recovery control / bypass (max FL=2)
-    L1=manual/fixed bypass; L2=automatic temperature-based.
-    Evidence: ComfoAirQ_Bypass-State CSV.
+    V-2c: Heat recovery control, prevention of overheating (max FL=2)
+
+    Official levels (D3.1 Review of the SRI methodology, Ventilation table):
+      L0 Without overheating control
+      L1 Modulate or bypass heat recovery based on SENSORS IN AIR EXHAUST
+      L2 Modulate or bypass heat recovery based on MULTIPLE ROOM TEMPERATURE
+         SENSORS or predictive control
+
+    There is no level for a manual bypass: L1 is already automatic. What
+    separates L1 from L2 is where the governing sensors sit, in the unit's own
+    exhaust air or in the rooms. So the test is comparative. A unit whose bypass
+    tracks its own return air is at L1 however sophisticated it is, and room
+    sensors only lift it to L2 if they are what the bypass follows. Sharing a
+    monitoring platform is not a control loop: readings from a different
+    manufacturer's thermostats arriving in the same database says nothing about
+    what opens the damper.
     """
     bp_key = next((k for k in csv_files if "comfoairq_bypass_state" in k), None)
     if bp_key is None:
@@ -1802,30 +2201,127 @@ def check_V2c(csv_files: dict) -> dict:
     if not cov["ok"] and cov["n_records"] < 3:
         return _result("V-2c", PARTIAL_EVIDENCE, 1, 0.45,
                        f"Bypass-State CSV: only {cov['n_records']} records. Insufficient coverage. "
-                       f"Manual bypass at L1 inferred from ComfoAir Q450 hardware capability.")
+                       f"Manual bypass at L1 inferred from ComfoAir Q350 hardware capability.")
 
-    # Bypass transitions happen without manual intervention → automatic (temp-based) → L2
-    return _result("V-2c", VERIFIED, 2, 0.82,
-                   f"ComfoAirQ_Bypass-State CSV: {cov['n_records']} records, {cov['period_days']} days "
-                   f"(max gap {cov['max_gap_days']} days). {n_open}/{n_total} states with bypass open "
-                   f"(>1%), {transitions} open-transitions. ComfoAir Q450 opens bypass automatically "
-                   f"when outdoor air temperature is more favourable than heat recovery → L2 (automatic "
-                   f"temperature-based control). No manual intervention required.",
+    # Which sensors the bypass follows, tested rather than assumed. The unit's
+    # own air temperatures stand for "sensors in air exhaust"; the room
+    # thermostats stand for the multiple room sensors L2 asks for. L2 is only
+    # reached if the room sensors explain the bypass better than the unit's own,
+    # by a margin, since in summer everything warms together and a bare
+    # correlation with a room proves nothing.
+    byp = _hourly(df)
+    own_r, room_r, room_best = 0.0, 0.0, None
+    for key, target in (("comfoairq_inside_temperature", "own"),
+                        ("comfoairq_exhaust_temperature", "own")):
+        k = next((x for x in csv_files if key in x), None)
+        if k is None or byp is None:
+            continue
+        j = pd.concat({"a": byp, "b": _hourly(csv_files[k])}, axis=1).dropna()
+        if len(j) >= 200:
+            r = abs(float(j["a"].corr(j["b"])))
+            own_r = max(own_r, r)
+    for k in csv_files:
+        if "_temperatura" not in k or "comfoairq" in k or byp is None:
+            continue
+        other = _hourly(csv_files[k])
+        if other is None:
+            continue
+        j = pd.concat({"a": byp, "b": other}, axis=1).dropna()
+        if len(j) >= 200:
+            r = abs(float(j["a"].corr(j["b"])))
+            if r > room_r:
+                room_r, room_best = r, k.split(".")[-1]
+
+    predictive = FORECAST_ENTITIES(csv_files)
+    room_leads = room_r >= own_r + V2C_ROOM_SENSOR_MARGIN
+
+    if room_leads or predictive:
+        level, conf = 2, 0.70
+        why = (f"the bypass follows room temperature (best r={room_r:.2f} at {room_best}) more "
+               f"closely than the unit's own air (r={own_r:.2f})" if room_leads
+               else f"{len(predictive)} forecast entities indicate predictive control")
+        note = f"Overheating control is governed beyond the unit's own sensors: {why}. L2."
+    else:
+        level, conf = 1, 0.78
+        note = (f"The bypass correlates most strongly with the unit's own air temperature "
+                f"(r={own_r:.2f}); the best room sensor reaches only r={room_r:.2f}"
+                f"{' at ' + room_best if room_best else ''}, which is no better and therefore "
+                f"does not show the room sensors driving the damper. Both rise together in "
+                f"summer, so a bare correlation with a room is not a control link. "
+                f"L2 requires multiple room temperature sensors or predictive control: the room "
+                f"thermostats belong to separate heating systems and share only a monitoring "
+                f"platform, and no forecast entity exists. Automatic bypass on the unit's own "
+                f"exhaust air is what L1 describes. L1.")
+
+    return _result("V-2c", VERIFIED, level, conf,
+                   f"Assessed against the official catalogue wording. Bypass series: "
+                   f"{cov['n_records']} records over {cov['period_days']} days, {n_open}/{n_total} "
+                   f"states open, {transitions} opening transitions. {note}",
                    {"n_records": cov["n_records"], "period_days": cov["period_days"],
-                    "n_open_states": n_open, "n_transitions": transitions})
+                    "n_open_states": n_open, "n_transitions": transitions,
+                    "own_sensor_correlation": round(own_r, 3),
+                    "best_room_correlation": round(room_r, 3),
+                    "best_room_sensor": room_best,
+                    "forecast_entities": len(predictive),
+                    "threshold": {"room_sensor_margin": V2C_ROOM_SENSOR_MARGIN}})
 
 
 def check_V2d(csv_files: dict) -> dict:
     """
-    V-2d: Supply air temperature control at AHU level (max FL=3)
-    L1=fixed setpoint; L2=variable setpoint; L3=demand-based.
-    Evidence: Exhaust-Temperature + Inside-Temperature CSVs.
+    V-2d: Supply air temperature control at the air handling unit level (max FL=3)
+
+    Official levels (D3.1 Review of the SRI methodology, Ventilation table):
+      L0 No automatic control
+      L1 Constant setpoint: a control loop controls the supply air temperature,
+         the setpoint is constant and can only be changed manually
+      L2 Variable set point with OUTDOOR TEMPERATURE COMPENSATION
+      L3 Variable set point with LOAD DEPENDENT compensation
+
+    Applicability is decided first. The official calculation sheet records the
+    precondition "Only in case of mechanical ventilation which supplies heating".
+    A heat recovery unit does not supply heating: it exchanges heat between the
+    two air streams. Without a heating coil the supply temperature is an outcome
+    of the exchanger rather than a controlled variable, which is also why a high
+    correlation between supply and outdoor temperature would prove nothing here.
+    The same reasoning that rules out L2 rules out L1, since L1 needs a control
+    loop holding a setpoint, so a unit failing the precondition cannot be parked
+    at L1 as a conservative choice.
     """
     ex_key = next((k for k in csv_files if "comfoairq_exhaust_temperature" in k), None)
     ins_key = next((k for k in csv_files if "comfoairq_inside_temperature" in k), None)
     if not ex_key and not ins_key:
-        return _result("V-2d", PARTIAL_EVIDENCE, 1, 0.50,
-                       "No temperature CSVs for ComfoAir found. L1 inferred from MVHR design.")
+        return _result("V-2d", NA_NOT_EVIDENCED, 0, 0.0,
+                       "No air handling unit temperature series found. Supply air temperature "
+                       "control cannot be assessed.")
+
+    # Does the ventilation supply heat at all? A post-heater would appear as a
+    # heating entity that draws power. A pre-heater does not count: on this
+    # class of unit it protects the exchanger from frost rather than warming the
+    # dwelling, and it is only evidence of heating supply if it actually ran.
+    heaters = {}
+    for k, df_h in csv_files.items():
+        kl = k.lower()
+        if "comfoairq" not in kl or not any(t in kl for t in ("heater", "postheat", "reheat")):
+            continue
+        v = pd.to_numeric(df_h.get("state"), errors="coerce")
+        v = v.dropna() if v is not None else []
+        heaters[k.split(".")[-1]] = {"n": int(len(v)),
+                                     "max": float(v.max()) if len(v) else 0.0}
+    active = {k: v for k, v in heaters.items() if v["max"] > 0}
+
+    if not active:
+        detail = (", ".join(f"{k} ({v['n']} records, max {v['max']:.0f})"
+                            for k, v in heaters.items())
+                  or "no heating entity of any kind")
+        return _result("V-2d", NA_EXPLICIT_ABSENCE, None, 0.85,
+                       f"Not applicable. The official calculation sheet records the precondition "
+                       f"\"Only in case of mechanical ventilation which supplies heating\". This "
+                       f"unit recovers heat between the air streams and has no heating coil: "
+                       f"{detail}. A pre-heater on this class of unit is frost protection for the "
+                       f"exchanger, not a heat supply to the dwelling, and here it never drew "
+                       f"power. Space heating is delivered by the radiant floor and radiators, so "
+                       f"the service is removed from both numerator and denominator.",
+                       {"heating_entities": heaters, "active_heating_entities": 0})
 
     records = {}
     for key, label in [(ex_key, "exhaust"), (ins_key, "inside")]:
@@ -1835,7 +2331,7 @@ def check_V2d(csv_files: dict) -> dict:
             records[label] = {"n": len(vals), "min": round(float(vals.min()),1) if len(vals)>0 else None,
                                "max": round(float(vals.max()),1) if len(vals)>0 else None}
 
-    # ComfoAir Q450 regulates supply temperature via bypass ratio
+    # ComfoAir Q350 regulates supply temperature via bypass ratio
     # When bypass closes → full heat recovery → supply temp rises toward exhaust temp
     # Official ladder: L1 constant set point held by a control loop; L2 variable
     # set point with OUTDOOR TEMPERATURE COMPENSATION; L3 variable set point with
@@ -1872,7 +2368,7 @@ def check_V2d(csv_files: dict) -> dict:
                 f"outdoor compensation is observable in principle. L2 as partial evidence.")
     else:
         level, status, conf = 1, VERIFIED, 0.70
-        note = (f"The ComfoAir Q450 holds supply air temperature through heat recovery and bypass "
+        note = (f"The ComfoAir Q350 holds supply air temperature through heat recovery and bypass "
                 f"modulation, which is a control loop and meets L1. Supply temperature correlates "
                 f"with outdoor temperature at r={r_out} and swings {spread} degrees across the "
                 f"period, but that is the exchanger passing ambient conditions through, not "
@@ -1931,7 +2427,7 @@ def check_V3(csv_files: dict) -> dict:
     if not bp_key:
         return _result("V-3", PARTIAL_EVIDENCE, 1, 0.45,
                        "No Bypass-State CSV for free cooling verification. DBL09: Zehnder ComfoAir "
-                       "Q450 supports free cooling via bypass. Manual free cooling (L1) inferred.",
+                       "Q350 supports free cooling via bypass. Manual free cooling (L1) inferred.",
                        {"source": "DBL09"})
 
     df_bp = csv_files[bp_key]
@@ -1989,10 +2485,13 @@ def check_V3(csv_files: dict) -> dict:
         note = (f"Bypass open in {open_pct:.0f}% of states, of which "
                 f"{night_share*100:.0f}% fall in night hours local time, so free cooling is modulated "
                 f"across all periods rather than limited to night cooling. L2. "
-                f"L3 requires enthalpy-directed control: humidity correlates at r={hum_r:.2f} "
-                f"against temperature at r={temp_r:.2f}, below the "
-                f"{V3_MIN_ENTHALPY_CORRELATION} threshold and not at parity with temperature, "
-                f"so the control is temperature-driven only.")
+                f"L3 requires enthalpy-directed control, which would show as humidity driving the "
+                f"bypass alongside temperature: humidity reaches r={hum_r:.2f} against "
+                f"temperature at r={temp_r:.2f}, both below the "
+                f"{V3_MIN_ENTHALPY_CORRELATION} threshold, so there is no evidence of enthalpy "
+                f"control. Note that the temperature figure is too low to establish "
+                f"temperature-driven control either; what the series shows is that neither "
+                f"variable alone explains the bypass.")
     else:
         level, status, conf = 1, VERIFIED, 0.70
         note = (f"Bypass openings concentrate at night local time "
@@ -2001,7 +2500,7 @@ def check_V3(csv_files: dict) -> dict:
     status, gate_note = _gate(status, n_records=cov["n_records"])
     return _result("V-3", status, level, conf,
                    f"Assessed against the official catalogue B wording. Free cooling via the {gate_note}"
-                   f"ComfoAir Q450 bypass, {cov['n_records']} records over {cov['period_days']} "
+                   f"ComfoAir Q350 bypass, {cov['n_records']} records over {cov['period_days']} "
                    f"days. {note} This service reads the same bypass entity as V-2c: V-2c assesses "
                    f"overheating prevention of the heat exchanger, V-3 the free cooling function, "
                    f"which are distinct services delivered by the same physical component.",
@@ -2033,15 +2532,36 @@ IAQ_PARAMETERS = {
 }
 
 
+# Entities that would carry an L3 warning, and the value at which one counts as
+# raised. A filter countdown reports days remaining, so the warning is the low
+# end, not the high end.
+V6_WARNING_TOKENS = ("days_to_replace", "filter_warning", "replace_filter",
+                     "maintenance_due", "filter_status")
+V6_WARNING_TRIGGER = 14   # days remaining at or below which a warning is raised
+
+
 def check_V6(csv_files: dict) -> dict:
     """
-    V-6: IAQ reporting (max FL=3)
-    L0 = none; L1 = single IAQ parameter measured but not resolved per zone;
-    L2 = IAQ parameter(s) logged per zone with operational history;
-    L3 = two or more distinct IAQ parameter families reported.
+    V-6: Reporting information regarding IAQ (max FL=3)
 
-    Evidence is derived from the CSV entity inventory rather than asserted from
-    the DBL sensing section.
+    Official levels (D3.1 Review of the SRI methodology, Ventilation table):
+      L0 None
+      L1 Air quality sensors (e.g. CO2) and real time autonomous monitoring
+      L2 Real time monitoring and historical information of IAQ AVAILABLE TO
+         OCCUPANTS
+      L3 That, plus WARNING ON MAINTENANCE NEEDS OR OCCUPANT ACTIONS
+         (e.g. window opening)
+
+    The ladder is cumulative and none of its steps counts zones or parameter
+    families: a building with one parameter in one room and a maintenance
+    warning outranks one with five parameters everywhere and no warning. So the
+    questions are, in order: are there sensors reporting in real time, does the
+    occupant get the history, and is the occupant warned.
+
+    L3 turns on what counts as a warning. A countdown that runs its course
+    without reaching its threshold shows the capability to warn rather than a
+    warning, and this assessment does not credit it, in the same way that H-1c
+    is not credited with weather compensation that is probable but unobserved.
     """
     if not csv_files:
         return _result("V-6", NA_NOT_EVIDENCED, 0, 0.0,
@@ -2084,34 +2604,63 @@ def check_V6(csv_files: dict) -> dict:
 
     absent = [f for f in IAQ_PARAMETERS if f not in found]
 
+    # L3 asks for a warning, so look for one: an entity that counts down to a
+    # maintenance action or prompts the occupant. Its presence is recorded
+    # either way, because whether a countdown that never reached its threshold
+    # is a warning is the judgement this service turns on, and the reader needs
+    # to see the evidence that was weighed rather than only the verdict.
+    warn = {}
+    for k, dfw in csv_files.items():
+        kl = k.lower()
+        if not any(t in kl for t in V6_WARNING_TOKENS):
+            continue
+        v = pd.to_numeric(dfw.get("state"), errors="coerce")
+        v = v.dropna() if v is not None else []
+        warn[k.split(".")[-1]] = {"n": int(len(v)),
+                                  "min": float(v.min()) if len(v) else None,
+                                  "max": float(v.max()) if len(v) else None}
+    fired = [k for k, v in warn.items()
+             if v["min"] is not None and v["min"] <= V6_WARNING_TRIGGER]
+
     if not substantive:
         level, status, conf = 1, PARTIAL_EVIDENCE, 0.45
         note = (f"IAQ parameters present ({', '.join(found)}) but no sensor reaches "
                 f"{V6_MIN_RECORDS_PER_SENSOR} records, so continuous reporting is not evidenced.")
-    elif n_families >= V6_MIN_PARAM_TYPES_FOR_L3 and n_zones >= V6_MIN_ZONES_FOR_L2:
-        level, status, conf = 3, VERIFIED, 0.80
-        note = (f"{n_families} distinct IAQ parameter families ({', '.join(substantive)}) logged "
-                f"across {n_zones} zones. Multi-parameter IAQ reporting confirmed at L3.")
-    elif n_zones >= V6_MIN_ZONES_FOR_L2:
+    elif fired:
+        level, status, conf = 3, VERIFIED, 0.75
+        note = (f"IAQ parameters ({', '.join(substantive)}) reported across {n_zones} rooms with "
+                f"{total_records} records, and a maintenance warning was actually raised during "
+                f"the period ({', '.join(fired)}). Real time monitoring, history available to the "
+                f"occupant and a warning on maintenance needs. L3.")
+    elif warn:
         level, status, conf = 2, VERIFIED, 0.72
-        note = (f"IAQ parameter '{', '.join(substantive)}' logged per zone across {n_zones} rooms "
-                f"({total_records} records total), each an individually addressable entity with "
-                f"continuous history in the building's monitoring platform. Individual IAQ "
-                f"parameter reporting confirmed at L2. L3 requires at least "
-                f"{V6_MIN_PARAM_TYPES_FOR_L3} parameter families; absent here: {', '.join(absent)}.")
+        detail = ", ".join(f"{k} ran between {v['min']:.0f} and {v['max']:.0f}"
+                           for k, v in warn.items() if v["min"] is not None)
+        note = (f"IAQ parameters ({', '.join(substantive)}) are reported continuously across "
+                f"{n_zones} rooms, {total_records} records, and the readings reach the occupant "
+                f"through the monitoring platform together with their retained history. Real time "
+                f"monitoring plus historical information available to occupants is L2. "
+                f"L3 additionally requires a warning on maintenance needs or occupant actions. A "
+                f"maintenance indicator does exist and is shown to the occupant ({detail}), but "
+                f"it never reached its trigger during the period, so what is evidenced is the "
+                f"capability to warn rather than a warning. This assessment does not credit an "
+                f"unfired countdown as a warning. No prompt for occupant action, such as window "
+                f"opening, is present.")
     else:
-        level, status, conf = 1, VERIFIED, 0.65
-        note = (f"IAQ parameter '{', '.join(substantive)}' logged with {total_records} records but "
-                f"resolved to only {n_zones} zone(s), below the {V6_MIN_ZONES_FOR_L2}-zone threshold "
-                f"for per-room reporting. Single-point IAQ indication at L1.")
+        level, status, conf = 2, VERIFIED, 0.70
+        note = (f"IAQ parameters ({', '.join(substantive)}) are reported continuously across "
+                f"{n_zones} rooms, {total_records} records, with their history available to the "
+                f"occupant. L2. No maintenance warning or occupant prompt entity exists, so L3 "
+                f"is not reached.")
 
     return _result("V-6", status, level, conf,
-                   f"CSV entity inventory: {note} "
-                   f"DBL08 sensing section lists CO2, PM2.5, PM10, VOC and occupancy as not "
-                   f"installed, which the CSV confirms. Interpretation note: relative humidity is "
-                   f"treated here as an IAQ parameter reported to the occupant, since the room "
-                   f"sensors are individually exposed in the monitoring platform and are not "
-                   f"internal to the ventilation control loop.",
+                   f"Assessed against the official catalogue wording. {note} "
+                   f"Relative humidity is treated as an IAQ parameter reported to the occupant: "
+                   f"the room sensors are individually exposed in the monitoring platform and are "
+                   f"not internal to the ventilation control loop. "
+                   f"The DBL sensing section (06-Sensing) records N/A for all eleven of its "
+                   f"fields, including humidity, in both Group 08 and Group 09, so it neither "
+                   f"confirms nor denies these sensors and the evidence is the operational record.",
                    {"iaq_families_found": sorted(found),
                     "iaq_families_substantive": sorted(substantive),
                     "iaq_families_absent": sorted(absent),
@@ -2214,13 +2763,26 @@ IRRADIANCE_TOKENS = ("irradiance", "solar_radiation", "illuminance", "lux",
 
 def check_DE2(csv_files: dict) -> dict:
     """
-    DE-2: Window open/closed control and HVAC interlock (max FL=3)
-    L0 = windows present, no open/closed detection; L1 = detection present;
-    L2 = detection with evidenced HVAC response; L3 = automatic window actuation.
+    DE-2: Window open/closed control, combined with HVAC system (max FL=3)
 
-    Applicability comes from the IFC (windows exist). The level comes from the CSV
-    entity inventory: the Tado thermostats expose a per-room open-window state,
-    which the previous documental assessment did not account for.
+    Official levels (D3.1 Review of the SRI methodology, Dynamic Envelope table):
+      L0 Manual operation or only fixed windows
+      L1 Open/closed detection to shut down heating or cooling systems
+      L2 Level 1 + automised mechanical window opening based on room sensor data
+      L3 Level 2 + centralized coordination of operable windows
+
+    An entity existing is not a sensor working. A window contact reports a
+    frequent physical event, so its state has to change: in an occupied dwelling
+    windows get opened. A contact that never once changed state across the whole
+    period is not reporting that no window was ever opened, it is reporting that
+    it is not functioning, and Home Assistant's own "unavailable" state says so
+    outright.
+
+    Note the contrast with the optimum-start entities read by H-4, which also
+    hold a single record each. There the single record IS the information,
+    because a configuration toggle's natural state is constant and one reading
+    of "off" means off throughout. The same data shape means opposite things
+    depending on whether the entity tracks a setting or an event.
     """
     windows_count = IFC_INVENTORY["01_Architectural"].get("IFCWINDOW", 0)
     if windows_count == 0:
@@ -2261,12 +2823,31 @@ def check_DE2(csv_files: dict) -> dict:
                 f"but no open-window event recorded. Detection present at L1; the HVAC "
                 f"interlock at L2 cannot be evidenced without an event to observe.")
     elif detect:
-        level, status, conf = 1, PARTIAL_EVIDENCE, 0.50
-        note = (f"{len(detect)} per-room open-window state entities exist "
-                f"({', '.join(sorted(k.split('.')[-1] for k, _ in detect)[:4])}...), confirming "
-                f"the Tado thermostats provide open-window detection. However every one holds "
-                f"fewer than {DE2_MIN_HISTORY} records (snapshot only, no history), so detection "
-                f"is configured but not operationally evidenced. L1 as partial evidence.")
+        # Entities exist but none has a usable history. Distinguish a sensor that
+        # is merely quiet from one that is not working: a contact that never
+        # changed state, or that sits in "unavailable", is reporting nothing.
+        stuck, unavailable = [], []
+        for k, n in detect:
+            st = csv_files[k].get("state")
+            vals = st.astype(str).str.lower() if st is not None else []
+            name = k.split(".")[-1]
+            if len(vals) and vals.isin({"unavailable", "unknown"}).all():
+                unavailable.append(name)
+            elif len(set(vals)) <= 1:
+                stuck.append(name)
+        level, status, conf = 0, VERIFIED, 0.78
+        note = (f"{len(detect)} per-room window-state entities exist, but none of them reports. "
+                f"{len(stuck)} never changed state across the whole period and "
+                f"{len(unavailable)} sit in Home Assistant's 'unavailable' state, which is what "
+                f"the platform records when an integration stops responding. Windows in an "
+                f"occupied dwelling are opened, so an unchanging contact over "
+                f"{int(_analysis_period_days(csv_files))} days evidences a sensor that is not "
+                f"working rather than a building whose windows stayed shut. "
+                f"L1 requires open/closed detection that shuts down heating or cooling; here "
+                f"there is neither working detection nor any evidence of a link to the HVAC "
+                f"controllers. The windows are manually operated, which is L0. "
+                f"The hardware is installed, so this is a case a documentary assessment would "
+                f"score and an operational one does not.")
     else:
         level, status, conf = 0, VERIFIED, 0.85
         note = ("No window-state entity of any kind in the CSV inventory. "
@@ -2287,10 +2868,21 @@ def check_DE2(csv_files: dict) -> dict:
 
 def check_DE4(csv_files: dict) -> dict:
     """
-    DE-4: Dynamic envelope performance reporting (max FL=4).
-    Requires dynamic envelope elements to exist. Persiane (roller shutters) confirmed in IFC → envelope exists.
-    However, no reporting system for shutter position, solar gain, or envelope performance is documented
-    in DBL09, DBL08, or any CSV → L0 (no reporting).
+    DE-4: Reporting information regarding performance of dynamic building
+    envelope systems (max FL=4)
+
+    Official levels (D3.1 Review of the SRI methodology, Dynamic Envelope table):
+      L0 No reporting
+      L1 Position of EACH PRODUCT and fault detection
+      L2 That plus predictive maintenance
+      L3/L4 That plus real-time information and further functions
+
+    The product is what makes the service applicable, which here is the movable
+    shading. Window contacts are the evidence for DE-2, and crediting them here
+    would score one set of sensors twice while the shutters, whose presence is
+    the reason this service is assessed at all, report nothing. L1 also asks for
+    the position of EACH product, so a subset of a different product class
+    cannot satisfy it.
     """
     persiane_count = IFC_INVENTORY["01_Architectural"].get("IFCBUILDINGELEMENTPROXY_Persiane", 0)
     windows_count  = IFC_INVENTORY["01_Architectural"].get("IFCWINDOW", 0)
@@ -2319,15 +2911,21 @@ def check_DE4(csv_files: dict) -> dict:
         level, status, conf = 2, VERIFIED, 0.70
         note = (f"{len(position)} shading position entities and {len(state_with_history)} window "
                 f"state entities with history: envelope state reported at L2.")
-    elif position or state_with_history:
+    elif position:
         level, status, conf = 1, VERIFIED, 0.65
-        note = (f"{len(position)} shading position and {len(state_with_history)} window state "
-                f"entities with history: partial envelope reporting at L1.")
-    elif state:
-        level, status, conf = 1, PARTIAL_EVIDENCE, 0.45
-        note = (f"{len(state)} window state entities exist but none reaches {DE2_MIN_HISTORY} "
-                f"records, so reporting is configured but not operationally evidenced. "
-                f"L1 as partial evidence.")
+        note = (f"{len(position)} shading position entities report the state of the products "
+                f"that make this service applicable: envelope position reporting at L1.")
+    elif state_with_history or state:
+        # Window contacts are DE-2's evidence, not this service's. The products
+        # here are the shading devices, and they report nothing.
+        level, status, conf = 0, VERIFIED, 0.80
+        note = (f"No shading position entity exists, so the {persiane_count} movable shading "
+                f"products that make this service applicable report neither position nor "
+                f"faults. The {len(state)} window-state entities present are the evidence for "
+                f"DE-2 and belong to a different product class; crediting them here would score "
+                f"one set of sensors under two services while leaving the shutters unreported. "
+                f"L1 asks for the position of each product, and none is available for any of "
+                f"them. No envelope performance reporting. L0.")
     else:
         level, status, conf = 0, VERIFIED, 0.88
         note = (f"Entity inventory scanned across {len(csv_files)} entities for shutter position "
@@ -2349,9 +2947,22 @@ def check_DE4(csv_files: dict) -> dict:
 
 def check_E2(csv_files: dict) -> dict:
     """
-    E-2: Local electricity generation reporting (max FL=4)
-    L1=basic counter; L2=time-resolved data; L3=production vs consumption; L4=predictive.
-    Evidence: Villa-Percentuale-Solare CSV (solar %, NOT kWh). PV inverter from DBL09.
+    E-2: Reporting information regarding local electricity generation (max FL=4)
+
+    Official levels (D3.1 Review of the SRI methodology, Electricity table):
+      L0 None
+      L1 Current generation data available
+      L2 Actual values and historical data
+      L3 Performance evaluation including forecasting and/or benchmarking
+      L4 That plus predictive management and fault detection
+
+    Generation is metered on Shelly channel em1. The channel identities are not
+    documented anywhere, so they were established from the data: em0 swings
+    negative and correlates -0.60 with the solar fraction, which is the grid
+    connection exporting; em1 correlates +0.80 and averages 847 W, matching the
+    "Fotovoltaico" tile on the Home Assistant dashboard, so it is the PV; em2
+    tracks the pool. Anything reading these channels depends on that mapping,
+    which is why it is written down here rather than left implicit in a name.
     """
     solar_key = next((k for k in csv_files if "percentuale_solare" in k), None)
     if solar_key is None:
@@ -2366,25 +2977,32 @@ def check_E2(csv_files: dict) -> dict:
     n = len(vals)
     cov = analyze_coverage(df, max_gap_hours=25)
 
-    # Villa-Percentuale-Solare = solar fraction (%), NOT production in kWh
-    # This is a MONITORING metric, not raw generation in kWh
-    # L1 (counter reading) → PV inverter provides this via its own display/app (DBL09)
-    # The solar % CSV confirms the monitoring system is active in Home Assistant
-    # L2 (time-resolved data) → solar % logged hourly confirms time-resolved monitoring
+    pv_k = next((k for k in csv_files if "em1_power" in k), None)
+    pv_n = len(csv_files[pv_k]) if pv_k else 0
+
     level, forecast, predictive = _reporting_level(
-        csv_files, has_current=n > 0,
-        has_history=n >= 500 and cov["period_days"] >= 60)
+        csv_files, has_current=(n > 0 or pv_n > 0),
+        has_history=(n >= 500 and cov["period_days"] >= 60) or pv_n >= 500)
     status, gate_note = _gate(VERIFIED, coverage_pct=cov["coverage_pct"], n_records=n)
-    return _result("E-2", status, level, 0.68,
-                   f"DBL09: PV 2.4 kWp (12 panels × 200 Wp) with inverter + energy management. {gate_note}"
-                   f"CSV 'Villa-Percentuale-Solare' ({n} records, {cov['period_days']} days, "
-                   f"coverage {cov['coverage_pct']}%): solar fraction logged at sub-hourly resolution "
-                   f"in Home Assistant → confirms time-resolved monitoring (L2). NOTE: CSV contains "
-                   f"solar fraction (%), not production in kWh — absolute generation reporting (L3/L4) "
-                   f"would require kWh data from inverter API (Shelly not available). Conservative: L2.",
-                   {"n_records": n, "period_days": cov["period_days"],
+    gen = (f"Generation itself is metered: the PV channel carries {pv_n} readings of "
+           f"instantaneous output over the period. " if pv_n else
+           "No generation channel is present, so only the derived solar fraction is available. ")
+    return _result("E-2", status, level, 0.72,
+                   f"Assessed against the official catalogue wording. DBL09 records a 2.4 kWp PV "
+                   f"array (12 panels of 200 Wp) with inverter and energy management devices, "
+                   f"which is the local generation this service applies to. {gate_note}"
+                   f"{gen}"
+                   f"Alongside it the solar fraction is logged ({n} records over "
+                   f"{cov['period_days']} days, coverage {cov['coverage_pct']}%), a derived "
+                   f"indicator of how much of the load generation covers. Current values and "
+                   f"their retained history are therefore both available, which is L2. "
+                   f"L3 requires performance evaluation with forecasting or benchmarking: no "
+                   f"forecast entity exists and no reference baseline is stored, so the "
+                   f"evaluation is left to whoever reads the chart.",
+                   {"solar_fraction_records": n, "pv_power_records": pv_n,
+                    "period_days": cov["period_days"],
                     "coverage_pct": cov["coverage_pct"],
-                    "note": "Solar % only — not kWh production"})
+                    "pv_channel": pv_k})
 
 
 def check_E3(csv_files: dict) -> dict:
@@ -2409,9 +3027,8 @@ def check_E4(csv_files: dict) -> dict:
       L3 Automated management based on current AND predicted energy needs and
          renewable availability
 
-    Moved out of manual_assessments.json on 2026-08-27. The Shelly meters make
-    both questions measurable: whether total load follows PV output (L2), and
-    whether any individual load runs to a daily schedule (L1).
+    The Shelly meters make both questions measurable: whether total load follows
+    PV output (L2), and whether any individual load runs to a daily schedule (L1).
     """
     grid_k = next((k for k in csv_files if "em0_power" in k), None)
     pv_k = next((k for k in csv_files if "em1_power" in k), None)
@@ -2513,9 +3130,9 @@ def check_E8(csv_files: dict) -> dict:
       L2 ... and electricity supply to neighbouring buildings
       L3 ... with potential to continue operating disconnected from the grid
 
-    Moved out of manual_assessments.json on 2026-08-27. Every level here starts
-    from a grid signal reaching the building, and whether one does is a question
-    the entity inventory answers. Islanding is separately testable: it would
+    Every level here starts from a grid signal reaching the building, and whether
+    one does is a question the entity inventory answers, which is why this is
+    derived rather than assessed documentarily. Islanding is separately testable: it would
     appear as the building consuming while the grid connection sits at zero.
     """
     grid_k = next((k for k in csv_files if "em0_power" in k), None)
@@ -2645,7 +3262,11 @@ def check_E12(csv_files: dict) -> dict:
                     f"({len(vals)} records, coverage {cov['coverage_pct']}%), which is real-time "
                     f"feedback at building level. In addition {len(appliance)} circuits meter "
                     f"individual loads ({', '.join(f'{n} ({c} rec)' for n, c in appliance[:3])}), "
-                    f"giving real-time feedback at appliance level. L3. "
+                    f"giving real-time feedback at appliance level. L3, which is an assessor "
+                    f"judgement: the catalogue does not say how many appliances constitute "
+                    f"appliance-level feedback, and metering two circuits in a dwelling that "
+                    f"also holds a heat pump, a boiler, five split units and white goods is "
+                    f"real but partial. "
                     f"L4 additionally requires automated personalised recommendations, of which "
                     f"there is no entity in the dataset.")
         elif realtime:
@@ -2696,10 +3317,15 @@ def check_E12(csv_files: dict) -> dict:
 # ════════════════════════════════════════════════════════════════════════════════
 
 def _ev_na(code: str) -> dict:
-    return _result(code, NA_EXPLICIT_ABSENCE, 0, 0.98,
-                   "DBL09 and DBL08: No EV charging infrastructure documented. "
-                   "No EV charger CSV. IFC: no EV charging equipment. Service not applicable.",
-                   {"source": "DBL09 + DBL08"})
+    """EV-16 and EV-17 assess how charging is managed, so they need charging."""
+    return _result(code, NA_EXPLICIT_ABSENCE, None, 0.95,
+                   "Not applicable. The official calculation sheet records the precondition "
+                   "\"Only to be assessed if EV charging available on site\". No charging point, "
+                   "connector or dedicated supply appears in DBL Group 09, in the IFC models or "
+                   "in the entity inventory. Parking does exist, which is what makes EV-15 "
+                   "applicable and scores it at L0, its official wording being \"not present\"; "
+                   "but the services that assess how charging is managed have nothing to assess.",
+                   {"source": "DBL Group 09 + IFC + entity inventory"})
 
 def check_EV15(csv_files):
     """
@@ -2800,9 +3426,9 @@ def check_MC3(csv_files: dict) -> dict:
 
     return _result("MC-3", status, level, conf,
                    f"Assessed against the official catalogue B wording. {note} "
-                   f"The previous assessment cited the Tado early-start feature as evidence of "
-                   f"optimised scheduling; the data show that feature disabled in every zone "
-                   f"({sl_states}), so it cannot support a higher level.",
+                   f"The Tado early-start feature would be evidence of optimised scheduling, but "
+                   f"the data show it disabled in every zone ({sl_states}), so it cannot support "
+                   f"a higher level.",
                    {"tado_entities": n_tado, "tado_records": n_tado_rec,
                     "scheduled_zones": sorted(zone_set), "schedule_detail": sched_detail,
                     "generator_entities": len(gen_entities),
@@ -2826,6 +3452,16 @@ def check_MC4(csv_files: dict) -> dict:
     L0 = none; L1 = faults detected and centrally reported; L2 = + fault isolated
     to a specific device via dedicated diagnostic entities with operational history;
     L3 = + predictive maintenance indicator with a demonstrable trend.
+
+    What counts as a detected fault here is an entity going unavailable or
+    unknown, surfaced against a named device in a single platform. That is what
+    the official L1 asks for, central indication of detected faults, but it is
+    worth being explicit that the faults being detected are largely the
+    building's own sensors dropping out. Those same unavailable states are why
+    DE-2 finds its window contacts inoperative. The building is credited here
+    for noticing that instruments have stopped reporting, and penalised there
+    for the fact that they have; both readings are correct and they are about
+    different questions.
 
     Evidence, all derived from the CSV rather than asserted:
       - unavailable/unknown states logged per entity  -> detection and central reporting
@@ -3074,13 +3710,82 @@ def check_MC13(csv_files: dict) -> dict:
 
 
 def check_MC25(csv_files: dict) -> dict:
-    """MC-25: Smart grid integration. Source: manual_assessments.json."""
-    return _from_manual("MC-25")
+    """
+    MC-25: Smart Grid Integration (max FL=2)
+
+    Official levels (D3.1 Review of the SRI methodology, Monitoring & Control):
+      L0 None. No harmonization between grid and TBS; the building is operated
+         independently from the grid
+      L1 Demand side management possible for some individual TBS, but not
+         coordinated over multiple systems
+      L2 Coordinated demand side management of multiple TBS
+
+    Every level above L0 needs a grid signal to harmonise with, so the question
+    is answerable from the entity inventory: either something carrying tariff,
+    price, demand-response or curtailment information reaches the building, or
+    nothing does. Scanning for it makes the absence a measurement.
+
+    That is the same test E-8 and MC-29 apply to the same dataset, and the three
+    services are kept consistent by construction: a building with no grid signal
+    cannot integrate with the grid, cannot support microgrid modes, and has no
+    DSM control to override.
+    """
+    dsm = [(k, len(df)) for k, df in csv_files.items()
+           if any(tok in k.lower() for tok in DSM_SIGNAL_TOKENS)]
+    if not dsm:
+        return _result("MC-25", VERIFIED, 0, 0.80,
+                       f"Every level of this service above L0 requires a grid signal for the "
+                       f"building's systems to harmonise with. The entity inventory was scanned "
+                       f"across {len(csv_files)} entities for tariff, price, demand-response and "
+                       f"curtailment indicators and returned zero matches, so nothing from the "
+                       f"grid reaches the building and its systems are operated independently of "
+                       f"it, which is the official L0 wording. "
+                       f"The building does hold the technical basis for smart grid integration, "
+                       f"a photovoltaic array, a battery with its management system and a "
+                       f"monitoring platform, but capability is not operation and this "
+                       f"assessment does not credit it as such. "
+                       f"The absence is measured rather than assumed, and the same scan settles "
+                       f"E-8 and MC-29 on the same evidence.",
+                       {"dsm_signal_entities": 0, "entities_scanned": len(csv_files)})
+    coordinated = len({k.split(".")[0] for k, _ in dsm}) > 1
+    level = 2 if coordinated else 1
+    return _result("MC-25", VERIFIED, level, 0.65,
+                   f"{len(dsm)} grid or tariff signal entities reach the building "
+                   f"({[k for k, _ in dsm][:4]}), so demand side management is possible. "
+                   f"{'Signals span more than one system, which is coordinated management at L2.' if coordinated else 'They reach individual systems only, which is L1.'}",
+                   {"dsm_signal_entities": len(dsm), "entities_scanned": len(csv_files)})
 
 
 def check_MC28(csv_files: dict) -> dict:
-    """MC-28: DSM performance reporting. Source: manual_assessments.json."""
-    return _from_manual("MC-28")
+    """
+    MC-28: Reporting information regarding demand side management performance
+    and operation (max FL=2)
+
+    Official levels (D3.1 Review of the SRI methodology, Monitoring & Control):
+      L0 None
+      L1 Reporting information on current DSM status, including managed energy flows
+      L2 Reporting on current, historical and predicted DSM status
+
+    Reporting on demand side management presupposes demand side management. The
+    check therefore reads MC-25's conclusion from the same evidence rather than
+    forming a second opinion on it, so the two cannot disagree.
+    """
+    dsm = [k for k in csv_files if any(tok in k.lower() for tok in DSM_SIGNAL_TOKENS)]
+    if not dsm:
+        return _result("MC-28", VERIFIED, 0, 0.80,
+                       f"There is no demand side management to report on. The entity inventory "
+                       f"holds no tariff, price, demand-response or curtailment channel across "
+                       f"{len(csv_files)} entities, which is the same finding that places MC-25 "
+                       f"at L0, so no DSM status or managed energy flow exists to be reported. "
+                       f"L0 follows from a measured absence, not from missing information about "
+                       f"the building.",
+                       {"dsm_signal_entities": 0, "entities_scanned": len(csv_files)})
+    return _result("MC-28", VERIFIED, 1, 0.60,
+                   f"{len(dsm)} demand side management entities are logged in the monitoring "
+                   f"platform, so current DSM status and the energy flows it manages are "
+                   f"reported. L2 would additionally require predicted status, and no forecast "
+                   f"entity exists.",
+                   {"dsm_signal_entities": len(dsm), "entities_scanned": len(csv_files)})
 
 
 # Entity-name tokens that would betray a demand-side-management or grid-signal
@@ -3981,7 +4686,7 @@ def build_html_report(service_results: list, sri: dict, data_period: tuple,
           '      <div class="ti"><span class="tdot"></span>Meross sensors - Ambient temp. (4 zones)</div>\n'
           '      <div class="ti"><span class="tdot"></span>Solar thermal CP4 XL - DHW collectors</div>\n'
           '      <div class="ti"><span class="tdot"></span>PV array - Solar photovoltaic generation</div>\n'
-          '      <div class="ti"><span class="tdot"></span>Zehnder ComfoAir Q450 - MVHR unit</div>\n'
+          '      <div class="ti"><span class="tdot"></span>Zehnder ComfoAir Q350 - MVHR unit</div>\n'
           '      <div class="ti"><span class="tdot"></span>Battery storage + BMS</div>\n'
           '      <div class="ti"><span class="tdot"></span>Home Assistant - Automation platform</div>\n'
           '      <div class="ti"><span class="tdot"></span>AC splits x2 (installed Jul 2026 - outside analysis period)</div>\n'

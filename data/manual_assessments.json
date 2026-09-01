@@ -1,16 +1,16 @@
 {
-  "_description": "Pre-assessed functional levels for SRI services without real-time CSV sensor data. All levels based on documentary evidence (DBL09, DBL08, IFC inventory). Edit this file to update any level without touching the main engine.",
-  "_version": "1.0",
-  "_assessment_date": "2026-08-26",
+  "_description": "Functionality levels for the SRI services that the operational dataset cannot decide. Method C evidence hierarchy, in order: (1) Digital Building Logbook, Groups 08 and 09, the equipment inventory and building systems, which establishes what the building has and is the source the engine is intended to read once it is integrated into the logbook portal; (2) Home Assistant historical data, the operational time series, which is the key contribution of Method C because it verifies how the building actually performs rather than what it is capable of; (3) IFC BIM models, for spatial and system cross-check; (4) technical datasheets, last resort, and only for inherent characteristics of a product. A datasheet can establish that a compressor is inverter driven; it can never establish how the building operated it. Any level resting on a datasheet says so, and marks an evidence_gap: a field the logbook would need in order to support that service on its own. Edit this file to update any level without touching the main engine.",
+  "_version": "2.0",
+  "_assessment_date": "2026-09-01",
   "_building": "Villa Segrate",
   "services": {
     "H-1b": {
       "status": "VERIFIED",
       "level": 1,
       "confidence": 0.65,
-      "justification": "DBL09: Radiant floor heating on ground floor (GF), controlled by INNOVA eHPoca 3in1 HP controller -- zone-level on/off based on supply water setpoint. IFC: 8 IFCSPACEHEATER elements consistent with combined radiant panels and radiators. No dedicated radiant-floor CSV available to verify scheduling (L2) or optimization (L3). Conservative: L1.",
+      "justification": "Official levels (D3.1 Table 16, p.44): L1 central automatic control, L2 advanced central automatic control, L3 advanced central automatic control with intermittent operation and/or room temperature feedback control. The radiant floor is documented in DBL09 row 235 (HVAC equipment: 'Radiant floor heating system (ground floor)') and appears in the IFC as two 8-way Tiemme manifolds ('P_MANIFOLD RADIANT', IfcDistributionControlElement in 02 HVAC.ifc). It is driven by the INNOVA controller on supply water setpoint (DBL09 row 255). L2 would require the central control to be advanced, and L3 would require intermittent operation or room temperature feedback into the floor circuits. No series exists for the manifolds or their circuits, and the room temperature sensors that do exist sit on the radiator side, so neither can be evidenced. L1.",
       "metadata": {
-        "source": "DBL09 + IFC",
+        "source": "DBL09 row 235/255 + IFC 02 HVAC.ifc (manifolds)",
         "system": "INNOVA HP -> radiant floor GF"
       }
     },
@@ -18,173 +18,122 @@
       "status": "VERIFIED",
       "level": 0,
       "confidence": 0.7,
-      "justification": "Official L1 requires outside temperature compensated control; L2 requires demand based control. DBL09 confirms the INNOVA eHPoca 3in1 controller manages distribution supply temperature, but neither the logbook nor the CSV evidences an outdoor temperature sensor feeding that control loop, and no INNOVA entity exists in the dataset. The presence of a controller does not by itself establish weather compensation. Official L0 (no automatic control of distribution fluid temperature) is what the available evidence supports. CORRECTION 2026-08-27: previously L1. The earlier justification read L1 as 'variable temperature setpoint' and L2 as 'weather-compensated', which inverts the official wording, and then assigned L1 while stating that weather compensation was 'technically probable but not confirmed'.",
+      "justification": "Official L1 requires outside temperature compensated control; L2 requires demand based control. DBL09 confirms the INNOVA eHPoca 3in1 controller manages distribution supply temperature, but neither the logbook nor the CSV evidences an outdoor temperature sensor feeding that control loop, and no INNOVA entity exists in the dataset. The presence of a controller does not by itself establish weather compensation. Official L0 (no automatic control of distribution fluid temperature) is what the available evidence supports.",
       "metadata": {
         "source": "DBL09",
-        "system": "INNOVA HP controller",
-        "previous_level": 1,
-        "previous_status": "VERIFIED",
-        "corrected": "2026-08-27",
-        "reason": "level reassessed against the official catalogue B wording"
+        "system": "INNOVA HP controller"
       }
     },
     "H-1d": {
       "status": "VERIFIED",
       "level": 1,
       "confidence": 0.55,
-      "justification": "DBL09: Distribution circuit with radiant floor and radiators implies circulation pump(s). INNOVA HP system includes pump management. IFC: 1866 pipe segments confirm distribution network. No pump speed/status CSV available. L1 (time-based on/off) is minimum guaranteed; L2+ cannot be verified without pump data logs. Conservative: L1.",
+      "justification": "Official levels (D3.1 Table 16, p.45): L1 on/off control, L2 multi-stage, L3 variable speed from internal estimation, L4 variable speed from an external demand signal. The IFC documents a hydronic distribution network: 1852 IFCPIPESEGMENT instances in 02 HVAC.ifc (plus 14 IFCPIPESEGMENTTYPE definitions). A circuit of that extent cannot operate without circulation, and that circulation is started and stopped by the generator, which is on/off control and the floor of the scale. No distribution pump is documented anywhere: the IFC contains zero IFCPUMP and zero IFCPUMPTYPE, and the five occurrences of 'pump' in DBL09 are the heat pump itself (rows 232/235), its electrical supply (row 242), the DHW circulation pump (row 246) and the solar circulation pump (row 253), none of which serves the heating distribution circuit. Without pump status or speed data, L2 and above cannot be evidenced. L1.",
       "metadata": {
-        "source": "DBL09 + IFC",
-        "ifc_pipe_segments": 1866
+        "source": "IFC 02 HVAC.ifc + DBL09",
+        "ifc_pipe_segments": 1852,
+        "ifc_pipe_segment_types": 14,
+        "ifc_pumps": 0
       }
     },
     "H-2a": {
       "status": "VERIFIED",
       "level": 0,
       "confidence": 0.7,
-      "justification": "Official L1 requires variable temperature control depending on outdoor temperature; L0 is constant temperature control. DBL09 confirms the IMMERGAS HERCULES SOLAR 25 condensing boiler with a modulating burner. Burner modulation regulates output to match instantaneous demand and is intrinsic to any condensing boiler; it is not the same as varying the temperature set point according to outdoor conditions, which requires an external temperature probe. No such probe is documented and no boiler entity exists in the dataset. CORRECTION 2026-08-27: previously L1, argued from burner modulation, which is not the criterion the official L1 states.",
+      "justification": "Official levels (D3.1 Table 16, p.46): L0 constant temperature control, L1 variable temperature control depending on outdoor temperature, L2 variable temperature control depending on the load. DBL09 documents the condensing boiler (rows 235 and 246, IMMERGAS HERCULES SOLAR 25) and its control unit (row 255). Burner modulation, which the manufacturer documentation describes, regulates output to match instantaneous demand; it is not the same as varying the temperature set point according to outdoor conditions, which is what L1 states and which requires an external temperature probe. No such probe is documented in DBL09, and the dataset contains no boiler entity, so the set point behaviour is unobservable. L0.",
       "metadata": {
         "source": "DBL09",
-        "system": "IMMERGAS HERCULES SOLAR 25",
-        "previous_level": 1,
-        "previous_status": "VERIFIED",
-        "corrected": "2026-08-27",
-        "reason": "level reassessed against the official catalogue B wording"
+        "system": "IMMERGAS HERCULES SOLAR 25"
       }
     },
     "H-2b": {
       "status": "VERIFIED",
       "level": 2,
       "confidence": 0.75,
-      "justification": "DBL09: INNOVA eHPoca 3in1 is an inverter air-to-water heat pump. Inverter drive provides continuous capacity modulation (0-100%) -- L2 verified. L3 (demand-based with grid signals) requires documented grid interaction capability, not evidenced in CSV or DBL. Conservative: L2.",
+      "justification": "Official levels (D3.1 Table 16, pp.46-47): L0 on/off, L1 multi-stage capacity control, L2 variable capacity control depending on load or demand (e.g. inverter frequency control), L3 that plus external grid signals. The dataset contains no entity for the heat pump, so its capacity behaviour was not observed. DBL09 records the unit and its control unit (rows 232, 235 and 255) but has no field for how a generator regulates capacity, so the logbook cannot answer the question either. Falling back to the manufacturer documentation held for this building, the technical bulletin (INNOVA_bollettino_tecnico_stone_m1, section 'Compressore') states 'compressore ermetico rotativo comandato con inverter' and lists 'inverter per controllo compressore' among the electrical panel components, with continuous modulation of the compressor frequency. Inverter frequency control is the example the catalogue itself gives for L2. L3 requires external signals from the grid: no tariff, price or demand-response entity exists in the dataset. L2, on documentary evidence of the last resort kind.",
       "metadata": {
-        "source": "DBL09",
-        "system": "INNOVA eHPoca 3in1 inverter HP"
+        "source": "Archivos de Sonia Lupica Spagnolo - 02 Caso studio/01 Info tecniche/Pompa di calore/INNOVA_bollettino_tecnico_stone_m1",
+        "system": "Air-to-water heat pump, hybrid with the condensing boiler (DBL09 rows 234-235)",
+        "evidence_gap": "DBL09 has no field recording how a generator regulates its capacity, so this level rests on manufacturer documentation. The logbook would need such a field to support H-2b on its own."
       }
     },
     "H-2d": {
-      "status": "UNRESOLVED",
+      "status": "VERIFIED",
       "level": 1,
-      "confidence": 0.4,
-      "justification": "Official L1 is control according to a FIXED priority list (e.g. based on rated energy efficiency); L2 requires a DYNAMIC priority list based on current energy efficiency or carbon emissions. DBL09 confirms a hybrid system with the INNOVA heat pump as lead generator and the IMMERGAS boiler for peak and backup, which is a priority list, but whether the switchover follows a fixed bivalent rule or a computed current efficiency cannot be determined: the dataset contains no entity for either generator, so their sequencing is unobservable. Marked UNRESOLVED so the uncertainty is carried in the score bounds rather than resolved by assumption. Lower bound L0, upper bound L4. CORRECTION 2026-08-27: previously L2 VERIFIED, argued from the existence of two generators with different efficiencies, which establishes a priority list but not that it is dynamic.",
+      "confidence": 0.75,
+      "justification": "Official levels (D3.1 Table 16, p.48): L0 priorities based on running time only, L1 control according to a FIXED priority list, L2 control according to a DYNAMIC priority list based on current energy efficiency, carbon emissions and generator capacity. The dataset contains no entity for either generator and DBL09 has no field for the sequencing logic, so neither the operational data nor the logbook can answer this. Falling back to the manufacturer documentation, the manual (INNOVA_manuale_stone_m1_monoblocco_rev_05, section 'Gestione riscaldatore ausiliario') documents the sequencing directly. The boiler is an auxiliary generator that cannot run at the same time as the heat pump ('la caldaia di supporto non puo lavorare in contemporanea alla pompa di calore'); it takes over on switchover when the outside temperature falls below a threshold set by parameter PF58 with hysteresis PF59, on a timeout in reaching the set point, or when the demanded water temperature exceeds what the heat pump can deliver. Those are preconfigured thresholds, so the priority list is fixed. Nothing in the documented logic computes current efficiency, emissions or available capacity, which is what L2 would require. L1.",
       "metadata": {
-        "source": "DBL09",
+        "source": "Archivos de Sonia Lupica Spagnolo - 02 Caso studio/01 Info tecniche/Pompa di calore/INNOVA_manuale_stone_m1_monoblocco_rev_05",
         "systems": [
           "INNOVA eHPoca 3in1",
           "IMMERGAS HERCULES SOLAR 25"
         ],
-        "previous_level": 2,
-        "previous_status": "VERIFIED",
-        "corrected": "2026-08-27",
-        "reason": "level reassessed against the official catalogue B wording"
+        "evidence_gap": "DBL09 has no field recording the sequencing logic between generators, so this level rests on manufacturer documentation. The logbook would need such a field to support H-2d on its own."
       }
     },
     "DHW-1a": {
-      "status": "VERIFIED",
-      "level": 0,
-      "confidence": 0.7,
-      "justification": "Official L0 is already automatic on/off control; L1 additionally requires SCHEDULED charging to be enabled. DBL09 confirms the INNOVA eHPoca 3in1 produces DHW and charges the 200 L store, but neither the logbook nor the dataset evidences a charging schedule: there is no entity for the heat pump and no store temperature sensor, so charging times are unobservable. Automatic on/off is intrinsic to any thermostatic DHW store and is what L0 describes. CORRECTION 2026-08-27: previously L1, inferred from the presence of a controller rather than from evidence of scheduling.",
+      "status": "N/A_EXPLICIT_ABSENCE",
+      "level": null,
+      "confidence": 0.9,
+      "justification": "Not applicable. The official SRI calculation sheet v4.5 states the precondition for this service in its overview_of_services tab: \"Only applicable in case of DHW storage with electric heating\". DHW-1a, DHW-1b and DHW-1d are not three ways of scoring the same function; each covers a different means of charging the store, and only the ones the building has are assessed. DBL09 rows 243 to 246 list the DHW system as a condensing boiler with integrated storage (IMMERGAS HERCULES SOLAR 25), a 200 L stainless steel tank, a CP4 XL solar thermal collector and a DHW circulation pump. Neither direct electric heating nor an electric heat pump appears on the DHW circuit, and no row of the logbook links the air-to-water heat pump to domestic hot water: it is recorded under the HVAC system, which serves space heating. The store is therefore charged by gas (assessed under DHW-1b) and by solar (assessed under DHW-1d). The electric route this service evaluates does not exist in this building, so it is removed from both the numerator and the denominator as the procedure prescribes.",
       "metadata": {
-        "source": "DBL09",
-        "system": "INNOVA eHPoca 3in1 + 200L tank",
-        "previous_level": 1,
-        "corrected": "2026-08-27"
+        "source": "SRI_calculation-sheet_v4.5 overview_of_services (precondition) + DBL09 rows 243-246",
+        "system": "DHW store charged by condensing boiler and solar thermal collector",
+        "assessed_instead": [
+          "DHW-1b (non-electrical heat generation)",
+          "DHW-1d (solar collector)"
+        ]
       }
     },
     "DHW-1b": {
       "status": "VERIFIED",
       "level": 0,
       "confidence": 0.7,
-      "justification": "Official L0 is already automatic on/off control; L1 additionally requires SCHEDULED charging to be enabled. DBL09 confirms the IMMERGAS HERCULES SOLAR 25 has an integrated DHW function and a dedicated controller, but no boiler entity exists in the dataset and no store temperature is logged, so a charging programme cannot be observed. CORRECTION 2026-08-27: previously L1, inferred from controller presence.",
+      "justification": "Official levels (D3.1, DHW table, p.53): L0 automatic control on/off, L1 that plus scheduled charging enable, L2 that plus demand-based supply temperature control or multi-sensor storage management, L3 charging control from external signals. Applicable: the official calculation sheet records the precondition \"Only applicable in case of DHW storage with non-electrical heat generation\", and the store is charged by a gas boiler. DBL09 row 246 records the condensing boiler with integrated DHW storage and row 255 its control unit, which is the automatic on/off control L0 describes. L1 is excluded positively rather than for want of data. On this boiler, time-banding the store between reduced and comfort temperature is a function of the Super CAR remote control, which the manufacturer documentation lists as an optional accessory. DBL09 row 255 enumerates six controllers and none is that accessory; the room thermostats it does record are the Tado and Meross units, which govern space heating rather than store charging. The scheduling capability is therefore not installed. L2 and L3 would need store sensors or an external signal, and neither exists in the dataset. L0.",
       "metadata": {
-        "source": "DBL09",
-        "system": "IMMERGAS HERCULES SOLAR 25",
-        "previous_level": 1,
-        "corrected": "2026-08-27"
+        "source": "DBL09 rows 246 and 255",
+        "system": "IMMERGAS HERCULES SOLAR 25 condensing boiler with 200 L integrated store",
+        "evidence_gap": "DBL09 records controllers by name but not the functions they offer, so whether DHW charging can be time-scheduled had to be read from the manufacturer documentation. The logbook would need that field to decide DHW-1b on its own."
       }
     },
     "L-1a": {
       "status": "VERIFIED",
       "level": 0,
       "confidence": 0.85,
-      "justification": "DBL09 and DBL08: No automated lighting control documented. No lighting CSV found. IFC Architectural: no IfcLightFixture or lighting controller elements. Standard manual switches assumed -- L0.",
+      "justification": "Official levels (D3.1, Lighting table): L0 manual on/off switch; L1 that plus a sweeping extinction signal; L2 automatic detection with auto on; L3 automatic detection with manual on. No source evidences any automatic lighting control. The logbook has no lighting control field in either group, the entity inventory contains no lighting, illuminance, dimmer or presence-for-lighting series, and no lighting controller appears in the IFC models. L0 is the scale default for manual switching, so it is reached by the absence of evidence for anything above it rather than by assuming what kind of switches are fitted. Note that the IFC architectural model contains no light fixtures either, which reflects what the model includes rather than what the building has, and is not evidence about controls. This is the one domain where the operational record can contribute nothing: nothing about the lighting is instrumented.",
       "metadata": {
-        "source": "DBL09 + DBL08 + IFC"
+        "source": "DBL Group 09 and 08 (no lighting control fields) + IFC + entity inventory",
+        "evidence_gap": "Lighting is not instrumented at all, so Method C cannot assess this domain from operational data. The logbook has no lighting control field either."
       }
     },
     "L-2": {
       "status": "VERIFIED",
       "level": 1,
       "confidence": 0.85,
-      "justification": "DBL08 documents separate lighting circuits across the dwelling, so switching is per room or zone, which is the official L1 wording (\"Manual (per room / zone)\"); L0 is reserved for a single central manual control. No daylight sensor, automatic switching or dimming is documented in DBL09, DBL08 or the IFC, and there is no lighting CSV, so L2 and above are not reached -- L1.",
+      "justification": "Official levels (D3.1, Lighting table): L0 manual central; L1 manual per room or zone; L2 automatic switching; L3 automatic dimming; L4 automatic dimming with scene-based control. The dwelling is switched per room rather than from one central point, which is L1. The evidence is the logbook entry for the electrical system components, which lists lighting circuits in the plural. That entry appears in DBL Group 08, the pre-renovation record; Group 09 lists what the renovation touched, which was the heat pump, ventilation, photovoltaic and metering supplies, and does not mention lighting either way. Lighting circuits are not removed by a renovation and Group 09 does not state their absence, so L1 stands, but the reader should know the entry comes from the earlier record. L2 and above require automatic switching or dimming driven by daylight. No daylight sensor is recorded in either group, DBL09 gives the daylight factor as N/A, and the entity inventory holds no illuminance or dimmer series.",
       "metadata": {
-        "source": "DBL09 + DBL08 + IFC",
-        "previous_level": 0,
-        "previous_status": "VERIFIED",
-        "corrected": "2026-08-29",
-        "reason": "L0 is central manual control; the building has per-room switching, which the official catalogue places at L1. Matches the Method B assessment in the official v4.5 calculation sheet."
+        "source": "DBL Group 08 row 242 (lighting circuits) + DBL Group 09 + IFC + entity inventory",
+        "evidence_gap": "DBL Group 09 does not record the lighting circuits, so the only positive evidence for per-room switching sits in the pre-renovation record."
       }
     },
     "E-3": {
       "status": "VERIFIED",
       "level": 1,
       "confidence": 0.62,
-      "justification": "DBL09: Battery storage system with BMS (Battery Management System) documented. Battery charges from PV during daylight -- L1 (basic charge/discharge). L2 (self-consumption optimisation) is typical BMS function but not verifiable without battery SOC CSV (no Shelly or BMS CSV available). Conservative: L1.",
+      "justification": "Official levels (D3.1, Electricity table): L0 none; L1 on site storage of electricity; L2 storage with a controller based on GRID SIGNALS; L3 storage with a controller optimising the use of locally generated electricity; L4 that plus the possibility to feed back into the grid. Note that L2 is not self-consumption optimisation, which is L3. DBL09 row 253 records a battery storage system with an inverter-integrated battery management system, which is on site electricity storage and meets L1. L2 requires the controller to act on grid signals: the entity inventory was scanned across the whole dataset for tariff, price, demand-response and curtailment channels and returned zero matches, the same result that settles E-8, MC-25 and MC-29, so no grid signal reaches the building and L2 is excluded. L3 would require evidence that the controller optimises the use of local generation. No battery entity of any kind exists in the dataset, so charge and discharge behaviour is unobservable. E-4 finds total load correlating with PV output at r=-0.02 and the site exporting in 24% of hours, which is what an unoptimised system looks like, but that measures the building rather than the battery controller. L1.",
       "metadata": {
-        "source": "DBL09",
-        "system": "Battery storage + BMS"
+        "source": "DBL09 row 253",
+        "system": "Battery storage with inverter-integrated BMS",
+        "evidence_gap": "No battery entity is exported to the monitoring platform, so state of charge, charge and discharge are unobservable. This also caps E-11 at L0."
       }
     },
     "E-11": {
       "status": "VERIFIED",
       "level": 0,
       "confidence": 0.75,
-      "justification": "Official L1 requires current state of charge (SOC) data to be available. DBL09 documents a battery with a BMS, and a BMS typically exposes SOC, but no SOC entity exists in the 158-entity dataset and no SOC reading is recorded anywhere in the logbook. The reporting service is therefore not evidenced at any level. CORRECTION 2026-08-27: previously L1. The earlier justification stated 'No battery SOC CSV available' and assigned L1 regardless, which is the exact criterion L1 requires.",
+      "justification": "Official L1 requires current state of charge (SOC) data to be available. DBL09 documents a battery with a BMS, and a BMS typically exposes SOC, but no SOC entity exists in the 158-entity dataset and no SOC reading is recorded anywhere in the logbook. The reporting service is therefore not evidenced at any level.",
       "metadata": {
-        "source": "DBL09",
-        "previous_level": 1,
-        "previous_status": "PARTIAL_EVIDENCE",
-        "corrected": "2026-08-27",
-        "reason": "level reassessed against the official catalogue B wording"
-      }
-    },
-    "MC-25": {
-      "status": "UNRESOLVED",
-      "level": 0,
-      "confidence": 0.35,
-      "justification": "DBL09: BMS and battery and PV present -- technical basis for smart grid integration exists. No CSV or DBL documentation of TOU tariff-based control, grid signal response, or demand-response programme. Classified UNRESOLVED. Lower bound: L0; upper bound: L1.",
-      "metadata": {
-        "source": "DBL09",
-        "lower_bound": 0,
-        "upper_bound": 1
-      }
-    },
-    "MC-28": {
-      "status": "UNRESOLVED",
-      "level": 0,
-      "confidence": 0.3,
-      "justification": "No DSM (demand-side management) programme documented in DBL or CSV. MC-25 (smart grid integration) is also UNRESOLVED, making DSM reporting contingent on its resolution. Lower bound: L0; upper bound: L1.",
-      "metadata": {
-        "lower_bound": 0,
-        "upper_bound": 1
-      }
-    }
-  },
-  "_corrections_2026_08_27": "H-1c, H-2a and E-11 downgraded: their previous justifications described evidence that does not meet the official criterion for the level assigned. H-2d and DHW-2b set to UNRESOLVED: with no generator telemetry the engine cannot distinguish a fixed from a dynamic priority list, so the uncertainty is carried in the bounds. Verified against SRI_calculation-sheet_v4.5 catalogue B.",
-  "_moved_to_code_2026_08_27": {
-    "note": "These services were removed from the fixed-verdict file because the dataset does contain evidence that can decide them. They are now evaluated in sri_method_c_FINAL.py against the official catalogue wording.",
-    "services": {
-      "DHW-2b": {
-        "previous_level": 1,
-        "previous_status": "UNRESOLVED"
-      },
-      "E-4": {
-        "previous_level": 1,
-        "previous_status": "VERIFIED"
-      },
-      "E-8": {
-        "previous_level": 0,
-        "previous_status": "UNRESOLVED"
+        "source": "DBL09"
       }
     }
   }
